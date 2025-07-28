@@ -9,5 +9,26 @@ Its an Online Polling System API that allows users to create and participate in 
 - **Results Display**: Real-time results of polls are displayed to users.
 - **Admin Panel**: Admins can manage users and polls.
 
+## 🚧 Setup Git Hooks (Required)
 
+Run this after cloning:
 
+```bash
+./tools/git-hooks/setup-hooks.sh
+```
+
+## 🛠️ Development Setup
+
+```bash
+# Create a virtual environment
+python -m venv venv
+
+# Activate the virtual environment
+source .venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+```
+## 🏃 Running the Application
+
+```bash

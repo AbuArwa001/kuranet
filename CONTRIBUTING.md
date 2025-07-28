@@ -47,8 +47,9 @@ Thank you for considering contributing to this project! To ensure a smooth devel
 ## 🧪 Running Tests Locally
 
 ```bash
-# Run all tests
-pytest
+# Run all tests before committing
+python manage.py test
+```
 
 # Run linter
 flake8
