@@ -1,4 +1,11 @@
 #!/bin/sh
+CURRENT_USER="$(git config user.name)"
+BRANCH="$(git symbolic-ref --short HEAD)"
+
+# Allow DevOps (you) to push
+if [ "$CURRENT_USER" = "khalfan" ]; then
+  exit 0
+fi
 
 branch="$(git symbolic-ref --short HEAD)"
 
