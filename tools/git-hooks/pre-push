@@ -2,11 +2,12 @@
 CURRENT_USER="$(git config user.name)"
 BRANCH="$(git symbolic-ref --short HEAD)"
 
-# Allow DevOps (you) to push
-if [ "$CURRENT_USER" = "khalfan" ]; then
+GIT_USER_EMAIL=$(git config user.email)
+
+# Allow specific git user to bypass
+if [ "$GIT_USER_EMAIL" = "AbuuArwa001" ]; then
   exit 0
 fi
-
 branch="$(git symbolic-ref --short HEAD)"
 
 if [ "$branch" = "main" ] || [ "$branch" = "develop" ]; then
