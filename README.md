@@ -19,7 +19,33 @@ Run this after cloning:
 
 ## 🛠️ Development Setup
 
+### Prerequisites to To develop stress free
+NB: Use GitFlow to manage your branches and commits.
+### setup GitFlow
+- Install GitFlow if not already installed:
+    1. For macOS users, you can use Homebrew:
+    ```bash
+    brew install git-flow
+    ```
+    2. For Ubuntu users, you can use apt:
+    ```bash
+    sudo apt-get install git-flow
+    ```
+    3. For Windows users, you can download the installer from the [GitFlow GitHub repository](https://github.com/nvie/gitflow).
+
+- Initialize GitFlow in your repository:
+    ```bash
+    git flow init
+    ```
+### Clone the Repository
+
+
 ```bash
+git clone https://github.com/AbuArwa001/kuranet.git
+cd kuranet
+```
+
+### Install Dependencies
 # Create a virtual environment
 python -m venv venv
 
@@ -32,3 +58,9 @@ pip install -r requirements.txt
 ## 🏃 Running the Application
 
 ```bash
+# Run database migrations
+python manage.py migrate
+
+# Start the development server
+python manage.py runserver
+```
