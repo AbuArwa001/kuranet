@@ -1,0 +1,11 @@
+push-release.sh
+.venv
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pdb
+*.egg
+.env
+*.env
+*.DS_Store

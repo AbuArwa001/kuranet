@@ -1,0 +1,9 @@
+#!/bin/sh
+
+branch="$(git symbolic-ref --short HEAD)"
+
+if [ "$branch" = "main" ] || [ "$branch" = "develop" ]; then
+  echo "❌ ERROR: You are on '$branch' — direct commits are not allowed."
+  echo "➡️  Use Git Flow: create a 'feature/' or 'release/' branch."
+  exit 1
+fi
