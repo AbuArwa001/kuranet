@@ -24,16 +24,20 @@ NB: Use GitFlow to manage your branches and commits.
 ### setup GitFlow
 - Install GitFlow if not already installed:
     1. For macOS users, you can use Homebrew:
+   
     ```bash
     brew install git-flow
     ```
     2. For Ubuntu users, you can use apt:
+
     ```bash
     sudo apt-get install git-flow
     ```
+
     3. For Windows users, you can download the installer from the [GitFlow GitHub repository](https://github.com/nvie/gitflow).
 
 - Initialize GitFlow in your repository:
+
     ```bash
     git flow init
     ```
@@ -47,14 +51,23 @@ cd kuranet
 
 ### Install Dependencies
 # Create a virtual environment
-python -m venv venv
+
+```bash
+python3 -m venv venv
+```
 
 # Activate the virtual environment
+
+```bash
 source .venv/bin/activate
+```
 
 # Install dependencies
+
+```bash
 pip install -r requirements.txt
 ```
+
 ## 🏃 Running the Application
 
 ```bash
