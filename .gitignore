@@ -1,4 +1,5 @@
 push-release.sh
+venv/
 .venv
 __pycache__/
 *.pyc
