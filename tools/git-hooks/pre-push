@@ -1,18 +1,15 @@
 #!/bin/sh
-CURRENT_USER="$(git config user.name)"
-BRANCH="$(git symbolic-ref --short HEAD)"
 
 GIT_USER_EMAIL=$(git config user.email)
+BRANCH=$(git symbolic-ref --short HEAD)
 
 # Allow specific git user to bypass
-# if [ "$GIT_USER_EMAIL" = "AbuuArwa001" || "$GIT_USER_EMAIL" = "khalfanathman12@yahoo.com"]; then
-#   exit 0
-# fi
-branch="$(git symbolic-ref --short HEAD)"
+if [ "$GIT_USER_EMAIL" = "AbuuArwa001" ] || [ "$GIT_USER_EMAIL" = "khalfanathman12@yahoo.com" ]; then
+  exit 0
+fi
 
-if [ "$branch" = "main" ] || [ "$branch" = "develop" ]; then
-  echo "❌ ERROR: Direct pushing to '$branch' is disabled."
+if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "develop" ]; then
+  echo "❌ ERROR: Direct pushing to '$BRANCH' is disabled."
   echo "➡️  Use Git Flow and push from a 'feature/' or 'release/' branch."
   exit 1
 fi
-
