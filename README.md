@@ -30,6 +30,7 @@ NB: Use GitFlow to manage your branches and commits.
 - Install GitFlow if not already installed:
     1. For macOS users, you can use Homebrew:
 
+   
     ```bash
     brew install git-flow
     ```
@@ -57,11 +58,17 @@ cd kuranet
 
 ### Install Dependencies
 # Create a virtual environment
-python -m venv venv
+
+```bash
+python3 -m venv venv
+```
 
 # Activate the virtual environment
 
+
+```bash
 source .venv/bin/activate
+```
 
 # Install dependencies
 
