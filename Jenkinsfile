@@ -1,63 +1,66 @@
 pipeline {
-    agent any
-    
+    agent none  # No global agent
+
     environment {
-        WEB1_IP = 'web1-private-ip'
-        WEB2_IP = 'web2-private-ip'
-        SSH_CREDENTIALS = credentials('kranet-ssh-key')
+        REPO = "https://github.com/AbuArwa001/kuranet.git"
+        SERVERS = ['172.234.252.70', '172.234.253.249']
+        DOCKER_IMAGE = "python:3.12-slim"  # Official Python image
     }
-    
+
     stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
+        // Stage 1: Code Validation in Docker
+        stage('Dockerized Tests') {
+            agent {
+                docker {
+                    image "${DOCKER_IMAGE}"
+                    args '-v /tmp:/tmp --network=host'  # Mount temp volume
+                    reuseNode true  # Runs on Jenkins host
+                }
             }
-        }
-        
-        stage('Install Dependencies') {
             steps {
-                script {
-                    sshagent([SSH_CREDENTIALS]) {
-                        sh "ssh -o StrictHostKeyChecking=no ubuntu@${WEB1_IP} 'cd /var/www/kuranet && pip install -r requirements.txt'"
-                        sh "ssh -o StrictHostKeyChecking=no ubuntu@${WEB2_IP} 'cd /var/www/kuranet && pip install -r requirements.txt'"
+                sh '''
+                    apt-get update && apt-get install -y git
+                    git clone ${REPO} /tmp/repo
+                    cd /tmp/repo
+                    python -m venv /tmp/venv
+                    . /tmp/venv/bin/activate
+                    pip install -r requirements.txt
+                    python manage.py test
+                    flake8 .
+                    bandit -r .
+                '''
+                post {
+                    always {
+                        sh 'rm -rf /tmp/repo /tmp/venv'  # Cleanup
                     }
                 }
             }
         }
-        
-        stage('Deploy') {
+
+        // Stage 2: Bare Metal Deployment
+        stage('Deploy to Production') {
+            agent any  # Runs on Jenkins executor
+            when {
+                expression { currentBuild.resultIsBetterOrEqualTo('SUCCESS') }
+            }
             steps {
                 script {
-                    sshagent([SSH_CREDENTIALS]) {
-                        // Copy files to web servers
-                        sh "rsync -avz -e 'ssh -o StrictHostKeyChecking=no' ./ ubuntu@${WEB1_IP}:/var/www/kranet/"
-                        sh "rsync -avz -e 'ssh -o StrictHostKeyChecking=no' ./ ubuntu@${WEB2_IP}:/var/www/kranet/"
-                        
-                        // Restart Django on both servers
-                        sh "ssh -o StrictHostKeyChecking=no ubuntu@${WEB1_IP} 'sudo systemctl restart kranet'"
-                        sh "ssh -o StrictHostKeyChecking=no ubuntu@${WEB2_IP} 'sudo systemctl restart kranet'"
+                    SERVERS.each { server ->
+                        sshagent(['deploy-key']) {
+                            sh """
+                                ssh ubuntu@${server} '
+                                    cd /home/ubuntu/kuranet
+                                    git pull origin main
+                                    source .venv/bin/activate
+                                    pip install -r requirements.txt
+                                    python manage.py migrate
+                                    sudo systemctl restart gunicorn
+                                '
+                            """
+                        }
                     }
                 }
             }
-        }
-        
-        stage('Smoke Test') {
-            steps {
-                script {
-                    // Verify deployment by hitting an API endpoint
-                    sh "curl -I http://${WEB1_IP}:8000/api/polls/"
-                    sh "curl -I http://${WEB2_IP}:8000/api/polls/"
-                }
-            }
-        }
-    }
-    
-    post {
-        success {
-            slackSend channel: '#devops', message: "Poll System Deployment Successful: ${env.BUILD_URL}"
-        }
-        failure {
-            slackSend channel: '#devops', message: "Poll System Deployment Failed: ${env.BUILD_URL}"
         }
     }
 }
