@@ -1,8 +1,10 @@
 # KuraNet
+
 ## Overview
 Its an Online Polling System API that allows users to create and participate in polls. The API is built using Django Rest Framework and provides endpoints for user authentication, poll management, voting, and results display.
 
 ## Features
+
 - **User Authentication**: Secure login and registration for users.
 - **Poll Creation**: Users can create polls with multiple options.
 - **Poll Participation**: Users can vote on existing polls.
@@ -20,14 +22,19 @@ Run this after cloning:
 ## 🛠️ Development Setup
 
 ### Prerequisites to To develop stress free
+
 NB: Use GitFlow to manage your branches and commits.
+
 ### setup GitFlow
+
 - Install GitFlow if not already installed:
     1. For macOS users, you can use Homebrew:
+
    
     ```bash
     brew install git-flow
     ```
+
     2. For Ubuntu users, you can use apt:
 
     ```bash
@@ -41,8 +48,8 @@ NB: Use GitFlow to manage your branches and commits.
     ```bash
     git flow init
     ```
-### Clone the Repository
 
+### Clone the Repository
 
 ```bash
 git clone https://github.com/AbuArwa001/kuranet.git
@@ -57,6 +64,7 @@ python3 -m venv venv
 ```
 
 # Activate the virtual environment
+
 
 ```bash
 source .venv/bin/activate
@@ -73,7 +81,15 @@ pip install -r requirements.txt
 ```bash
 # Run database migrations
 python manage.py migrate
+```
 
 # Start the development server
+
+```bash
 python manage.py runserver
 ```
+
+# remove commited files and folders
+
+````
+
