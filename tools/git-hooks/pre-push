@@ -5,9 +5,9 @@ BRANCH="$(git symbolic-ref --short HEAD)"
 GIT_USER_EMAIL=$(git config user.email)
 
 # Allow specific git user to bypass
-if [ "$GIT_USER_EMAIL" = "AbuuArwa001" ]; then
-  exit 0
-fi
+# if [ "$GIT_USER_EMAIL" = "AbuuArwa001" || "$GIT_USER_EMAIL" = "khalfanathman12@yahoo.com"]; then
+#   exit 0
+# fi
 branch="$(git symbolic-ref --short HEAD)"
 
 if [ "$branch" = "main" ] || [ "$branch" = "develop" ]; then
