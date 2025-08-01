@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'drf_yasg',
-    'polls',  # Your custom app
+    'kuranet.polls',
 ]
 
 MIDDLEWARE = [
