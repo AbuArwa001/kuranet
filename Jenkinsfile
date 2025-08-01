@@ -32,13 +32,19 @@ pipeline {
                     python -m venv ${VENV_PATH}
                     . ${VENV_PATH}/bin/activate
                     pip install -r requirements.txt
-                    python manage.py test
+                    python manage.py test kuranet.tests
                 """
             }
         }
 
         stage('Static Analysis') {
-            agent any
+            agent {
+                docker {
+                    image "${DOCKER_IMAGE}"
+                    args '-u root -v /tmp:/tmp --network=host'
+                    reuseNode true
+                }
+            }
             steps {
                 script {
                     // Install and run pylint
