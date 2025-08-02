@@ -32,7 +32,7 @@ pipeline {
                     python -m venv ${VENV_PATH}
                     . ${VENV_PATH}/bin/activate
                     pip install -r requirements.txt
-                    python manage.py test kuranet.tests
+                    python manage.py test polls.tests --verbosity=2 --failfast
                 """
             }
         }
