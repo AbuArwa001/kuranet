@@ -8,6 +8,8 @@ pipeline {
         DOCKER_IMAGE = "python:3.12-slim"
         APP_DIR = "~/kuranet"
         VENV_PATH = "${APP_DIR}/.venv"
+        SSH_CREDENTIALS = credentials('ssh-credentials')
+        DISCORD_WEBHOOK_URL = credentials('discord-webhook-url')
     }
 
     stages {
@@ -16,6 +18,34 @@ pipeline {
             agent any
             steps {
                 checkout scm
+            }
+        }
+
+        stage('Security Scan') {
+            agent {
+                docker {
+                    image "${DOCKER_IMAGE}"
+                    args '-u root -v /tmp:/tmp'
+                    reuseNode true
+                }
+            }
+            steps {
+                script {
+                    sh "pip install bandit safety"
+                    
+                    // Bandit scan with threshold
+                    def banditExit = sh(
+                        script: "bandit -r kuranet/ -ll",
+                        returnStatus: true
+                    )
+                    
+                    // Dependency vulnerability check
+                    sh "safety check --full-report"
+                    
+                    if (banditExit != 0) {
+                        error("Security scan failed: Bandit found critical issues")
+                    }
+                }
             }
         }
 
@@ -28,12 +58,15 @@ pipeline {
                 }
             }
             steps {
-                sh """
-                    python -m venv ${VENV_PATH}
-                    . ${VENV_PATH}/bin/activate
-                    pip install -r requirements.txt
-                    python manage.py test polls.tests --verbosity=2 --failfast
-                """
+                withCredentials([string(credentialsId: 'django-secret-key', variable: 'SECRET_KEY')]) {
+                    sh """
+                        python -m venv ${VENV_PATH}
+                        . ${VENV_PATH}/bin/activate
+                        pip install -r requirements.txt
+                        export DJANGO_SECRET_KEY=${SECRET_KEY}
+                        python manage.py test polls.tests --verbosity=2 --failfast
+                    """
+                }
             }
         }
 
@@ -41,20 +74,16 @@ pipeline {
             agent {
                 docker {
                     image "${DOCKER_IMAGE}"
-                    args '-u root -v /tmp:/tmp --network=host'
+                    args '-u root -v /tmp:/tmp'
                     reuseNode true
                 }
             }
             steps {
-                script {
-                    // Install and run pylint
-                    sh "pip install pylint"
-                    sh "pylint kuranet/ --exit-zero"
-                    
-                    // Security scanning
-                    sh "pip install bandit"
-                    sh "bandit -r kuranet/"
-                }
+                sh """
+                    pip install pylint
+                    pylint kuranet/ --exit-zero > pylint-report.txt
+                """
+                archiveArtifacts artifacts: 'pylint-report.txt'
             }
         }
         // CI PHASE END
@@ -64,21 +93,22 @@ pipeline {
             agent {
                 docker {
                     image "${DOCKER_IMAGE}"
-                    args '-u root -v /tmp:/tmp --network=host'
+                    args '-u root -v /tmp:/tmp'
                     reuseNode true
                 }
             }
             steps {
-                script {
-                    sshagent(['SSH_CREDENTIALS']) {
+                sshagent(['SSH_CREDENTIALS']) {
+                    withCredentials([string(credentialsId: 'django-secret-key', variable: 'SECRET_KEY')]) {
                         retry(3) {
                             sh """
-                                ssh -vvv -o StrictHostKeyChecking=no ubuntu@${WEB1_IP} '
+                                ssh -o StrictHostKeyChecking=no ubuntu@${WEB1_IP} '
                                     cd ${APP_DIR} && \
                                     git pull && \
                                     python -m venv ${VENV_PATH} && \
                                     . ${VENV_PATH}/bin/activate && \
                                     pip install -r requirements.txt && \
+                                    export DJANGO_SECRET_KEY=${SECRET_KEY} && \
                                     python manage.py migrate && \
                                     sudo systemctl restart gunicorn
                                 '
@@ -93,9 +123,13 @@ pipeline {
             agent any
             steps {
                 script {
-                    // Run API tests against staging environment
-                    sh "pip install pytest requests"
-                    sh "python tests/integration_tests.py"
+                    withCredentials([string(credentialsId: 'django-secret-key', variable: 'SECRET_KEY')]) {
+                        sh """
+                            pip install pytest requests
+                            export DJANGO_SECRET_KEY=${SECRET_KEY}
+                            python tests/integration_tests.py
+                        """
+                    }
                 }
             }
         }
@@ -107,21 +141,22 @@ pipeline {
             agent {
                 docker {
                     image "${DOCKER_IMAGE}"
-                    args '-u root -v /tmp:/tmp --network=host'
+                    args '-u root -v /tmp:/tmp'
                     reuseNode true
                 }
             }
             steps {
-                script {
-                    sshagent(['SSH_CREDENTIALS']) {
+                sshagent(['SSH_CREDENTIALS']) {
+                    withCredentials([string(credentialsId: 'django-secret-key', variable: 'SECRET_KEY')]) {
                         retry(3) {
                             sh """
-                                ssh -vvv -o StrictHostKeyChecking=no ubuntu@${WEB2_IP} '
+                                ssh -o StrictHostKeyChecking=no ubuntu@${WEB2_IP} '
                                     cd ${APP_DIR} && \
                                     git pull && \
                                     python -m venv ${VENV_PATH} && \
                                     . ${VENV_PATH}/bin/activate && \
                                     pip install -r requirements.txt && \
+                                    export DJANGO_SECRET_KEY=${SECRET_KEY} && \
                                     python manage.py migrate && \
                                     sudo systemctl restart gunicorn
                                 '
@@ -136,24 +171,26 @@ pipeline {
     
     post {
         always {
-            node('') { // Wrap node-dependent steps in a node block
-                junit '**/test-reports/*.xml'
-                archiveArtifacts artifacts: '**/lint-report.txt', allowEmptyArchive: true
-            }
+            junit '**/test-reports/*.xml'
+            archiveArtifacts artifacts: '**/*-report.txt', allowEmptyArchive: true
         }
         success {
-            discordSend(
-                description: "Deployment Successful",
-                link: env.BUILD_URL,
-                webhookURL: 'https://discord.com/api/webhooks/1400802617625415720/xlQybzuwDzCWwyGklwY2WXaahb02LiC3JodoCIv9KD06z0J59zPM_NKqATjutWdbm14Z'
-            )
+            script {
+                discordSend(
+                    description: "Deployment Successful",
+                    link: env.BUILD_URL,
+                    webhookURL: "${DISCORD_WEBHOOK_URL}"
+                )
+            }
         }
         failure {
-            discordSend(
-                description: "Build Failed: ${env.JOB_NAME} ${env.BUILD_NUMBER}",
-                link: env.BUILD_URL,
-                webhookURL: 'https://discord.com/api/webhooks/1400802617625415720/xlQybzuwDzCWwyGklwY2WXaahb02LiC3JodoCIv9KD06z0J59zPM_NKqATjutWdbm14Z'
-            )
+            script {
+                discordSend(
+                    description: "Build Failed: ${env.JOB_NAME} ${env.BUILD_NUMBER}",
+                    link: env.BUILD_URL,
+                    webhookURL: "${DISCORD_WEBHOOK_URL}"
+                )
+            }
         }
     }
 }
