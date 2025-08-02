@@ -10,6 +10,64 @@ Its an Online Polling System API that allows users to create and participate in 
 - **Poll Participation**: Users can vote on existing polls.
 - **Results Display**: Real-time results of polls are displayed to users.
 - **Admin Panel**: Admins can manage users and polls.
+# KuraNet
+
+## Overview
+It's an Online Polling System API that allows users to create and participate in polls. The API is built using Django Rest Framework and provides endpoints for user authentication, poll management, voting, and results display.
+
+## Features
+
+- **User Authentication**: Secure login and registration for users.
+- **Poll Creation**: Users can create polls with multiple options.
+- **Poll Participation**: Users can vote on existing polls.
+- **Results Display**: Real-time results of polls are displayed to users.
+- **Admin Panel**: Admins can manage users and polls.
+
+## 📊 Entity Relationship Diagram (ERD)
+
+```mermaid
+erDiagram
+    USER ||--o{ POLL : creates
+    USER ||--o{ VOTE : votes
+    POLL ||--|{ POLLOPTION : has
+    POLLOPTION ||--o{ VOTE : receives
+    POLL ||--o{ RESULT : summarizes
+    POLLOPTION ||--o{ RESULT : included_in
+
+    USER {
+        int id PK
+        string name
+        string email
+    }
+
+    POLL {
+        int id PK
+        string title
+        string description
+        datetime created_at
+        int author_id FK
+    }
+
+    POLLOPTION {
+        int id PK
+        int poll_id FK
+        string text
+    }
+
+    VOTE {
+        int id PK
+        int user_id FK
+        int option_id FK
+        datetime voted_at
+    }
+
+    RESULT {
+        int id PK
+        int poll_id FK
+        int option_id FK
+        int vote_count
+    }
+```
 
 ## 🚧 Setup Git Hooks (Required)
 
@@ -88,8 +146,4 @@ python manage.py migrate
 ```bash
 python manage.py runserver
 ```
-
-# remove commited files and folders
-
-````
 
