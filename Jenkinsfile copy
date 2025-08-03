@@ -5,6 +5,7 @@ pipeline {
         REPO = "https://github.com/AbuArwa001/kuranet.git"
         WEB1_IP = "172.234.252.70"
         WEB2_IP = "172.234.253.249"
+        STAGING_IP = "34.66.89.52"
         DOCKER_IMAGE = "python:3.12-slim"
         APP_DIR = "~/kuranet"
         VENV_PATH = "${APP_DIR}/.venv"
@@ -102,17 +103,41 @@ pipeline {
         }
         // CI PHASE END
 
+        // CD PHASE START
+        stage('Deploy to Staging') {
+            agent any  // Changed to any since we're doing SSH
+            steps {
+                sshagent(credentials: [SSH_CREDENTIALS_ID]) {
+                    withCredentials([string(credentialsId: 'django-secret-key', variable: 'SECRET_KEY')]) {
+                        retry(3) {
+                            sh """
+                                ssh -o StrictHostKeyChecking=no ubuntu@${WEB1_IP} '
+                                    cd ${APP_DIR} && \
+                                    git pull && \
+                                    python -m venv ${VENV_PATH} && \
+                                    . ${VENV_PATH}/bin/activate && \
+                                    pip install -r requirements.txt && \
+                                    cp ~/.env ${APP_DIR} && \
+                                    python manage.py migrate && \
+                                    sudo systemctl restart gunicorn
+                                '
+                            """
+                        }
+                    }
+                }
+            }
+        }
+
         stage('Integration Tests') {
             agent any
             steps {
                 script {
                     withCredentials([string(credentialsId: 'django-secret-key', variable: 'SECRET_KEY')]) {
-                        withEnv(["DJANGO_SECRET_KEY=${env.SECRET_KEY}"]) {
-                            sh """
-                                pip install pytest requests
-                                python tests/integration_tests.py
-                            """
-                        }
+                        sh """
+                            pip install pytest requests
+                            export DJANGO_SECRET_KEY=${SECRET_KEY}
+                            python tests/integration_tests.py
+                        """
                     }
                 }
             }
