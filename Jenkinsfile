@@ -8,8 +8,7 @@ pipeline {
         DOCKER_IMAGE = "python:3.12-slim"
         APP_DIR = "~/kuranet"
         VENV_PATH = "${APP_DIR}/.venv"
-        SSH_CREDENTIALS = credentials('ssh-credentials')
-        DISCORD_WEBHOOK_URL = credentials('discord-webhook-url')
+        SSH_CREDENTIALS_ID = 'ssh-credentials'  // Changed to reference ID only
     }
 
     stages {
@@ -47,6 +46,11 @@ pipeline {
                     }
                 }
             }
+            post {
+                always {
+                    archiveArtifacts artifacts: '**/bandit-report.*,**/safety-report.*', allowEmptyArchive: true
+                }
+            }
         }
 
         stage('Unit Tests') {
@@ -64,8 +68,13 @@ pipeline {
                         . ${VENV_PATH}/bin/activate
                         pip install -r requirements.txt
                         export DJANGO_SECRET_KEY=${SECRET_KEY}
-                        python manage.py test polls.tests --verbosity=2 --failfast
+                        python manage.py test polls.tests --verbosity=2 --failfast --junitxml=test-results.xml
                     """
+                }
+            }
+            post {
+                always {
+                    junit 'test-results.xml'
                 }
             }
         }
@@ -83,22 +92,20 @@ pipeline {
                     pip install pylint
                     pylint kuranet/ --exit-zero > pylint-report.txt
                 """
-                archiveArtifacts artifacts: 'pylint-report.txt'
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'pylint-report.txt', allowEmptyArchive: true
+                }
             }
         }
         // CI PHASE END
 
         // CD PHASE START
         stage('Deploy to Staging') {
-            agent {
-                docker {
-                    image "${DOCKER_IMAGE}"
-                    args '-u root -v /tmp:/tmp'
-                    reuseNode true
-                }
-            }
+            agent any  // Changed to any since we're doing SSH
             steps {
-                sshagent(['SSH_CREDENTIALS']) {
+                sshagent(credentials: [SSH_CREDENTIALS_ID]) {
                     withCredentials([string(credentialsId: 'django-secret-key', variable: 'SECRET_KEY')]) {
                         retry(3) {
                             sh """
@@ -138,28 +145,26 @@ pipeline {
             when {
                 branch 'main'
             }
-            agent {
-                docker {
-                    image "${DOCKER_IMAGE}"
-                    args '-u root -v /tmp:/tmp'
-                    reuseNode true
-                }
-            }
+            agent any
             steps {
-                sshagent(['SSH_CREDENTIALS']) {
+                sshagent(credentials: [SSH_CREDENTIALS_ID]) {
                     withCredentials([string(credentialsId: 'django-secret-key', variable: 'SECRET_KEY')]) {
                         retry(3) {
                             sh """
-                                ssh -o StrictHostKeyChecking=no ubuntu@${WEB2_IP} '
-                                    cd ${APP_DIR} && \
-                                    git pull && \
-                                    python -m venv ${VENV_PATH} && \
-                                    . ${VENV_PATH}/bin/activate && \
-                                    pip install -r requirements.txt && \
-                                    export DJANGO_SECRET_KEY=${SECRET_KEY} && \
-                                    python manage.py migrate && \
-                                    sudo systemctl restart gunicorn
-                                '
+                                for IP in ${WEB1_IP} ${WEB2_IP}; do
+                                    ssh -o StrictHostKeyChecking=no ubuntu@\$IP '
+                                        rm -rf ${APP_DIR} && \
+                                        mkdir -p ${APP_DIR} && \
+                                        git clone ${REPO} ${APP_DIR} && \
+                                        cd ${APP_DIR} && \
+                                        python -m venv ${VENV_PATH} && \
+                                        . ${VENV_PATH}/bin/activate && \
+                                        pip install -r requirements.txt && \
+                                        export DJANGO_SECRET_KEY=${SECRET_KEY} && \
+                                        python manage.py migrate && \
+                                        sudo systemctl restart gunicorn
+                                    '
+                                done
                             """
                         }
                     }
@@ -171,25 +176,34 @@ pipeline {
     
     post {
         always {
-            junit '**/test-reports/*.xml'
-            archiveArtifacts artifacts: '**/*-report.txt', allowEmptyArchive: true
+            script {
+                // Wrap in node context since we're using agent none at top level
+                node {
+                    junit '**/test-results.xml'
+                    archiveArtifacts artifacts: '**/*-report.txt,**/test-results.xml', allowEmptyArchive: true
+                }
+            }
         }
         success {
             script {
-                discordSend(
-                    description: "Deployment Successful",
-                    link: env.BUILD_URL,
-                    webhookURL: "${DISCORD_WEBHOOK_URL}"
-                )
+                withCredentials([string(credentialsId: 'discord-webhook-url', variable: 'DISCORD_WEBHOOK_URL')]) {
+                    discordSend(
+                        description: "Deployment Successful: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                        link: env.BUILD_URL,
+                        webhookURL: "${DISCORD_WEBHOOK_URL}"
+                    )
+                }
             }
         }
         failure {
             script {
-                discordSend(
-                    description: "Build Failed: ${env.JOB_NAME} ${env.BUILD_NUMBER}",
-                    link: env.BUILD_URL,
-                    webhookURL: "${DISCORD_WEBHOOK_URL}"
-                )
+                withCredentials([string(credentialsId: 'discord-webhook-url', variable: 'DISCORD_WEBHOOK_URL')]) {
+                    discordSend(
+                        description: "Build Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                        link: env.BUILD_URL,
+                        webhookURL: "${DISCORD_WEBHOOK_URL}"
+                    )
+                }
             }
         }
     }
