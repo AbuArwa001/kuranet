@@ -109,9 +109,13 @@ pipeline {
                                     ssh -o StrictHostKeyChecking=no ubuntu@\${IP} "
                                         # Backup existing directory
                                         [ -d ${APP_DIR} ] && mv ${APP_DIR} ${APP_DIR}_bak_\${TIMESTAMP}
+                                        # rm directory if it exists
+                                        [ -d ${APP_DIR} ] &&  \
+                                        echo 'Removing existing application directory' && \
+                                        rm -rf ${APP_DIR} || true
                                         
                                         # Clone repo to correct location
-                                        git clone ${REPO} ${APP_DIR} || {
+                                        git clone ${REPO} || {
                                             echo 'Failed to clone repository'
                                             exit 1
                                         }
