@@ -1,19 +1,62 @@
 #!/bin/bash
 set -e  # Exit immediately if any command fails
 
+# Configuration
+VENV_PATH=~/kuranet/.venv
+TEST_BASE_URL="http://localhost:8000"
+MAX_WAIT_SECONDS=30
+RETRY_INTERVAL=2
+
 # Setup environment
-python -m venv ~/kuranet/.venv
-source ~/kuranet/.venv/bin/activate
+python -m venv $VENV_PATH
+source $VENV_PATH/bin/activate
 
 # Install dependencies
 pip install --upgrade pip
 pip install -r requirements.txt
 pip install pytest pytest-django pytest-cov pytest-xdist
 
+# Start Django server in background
+echo "Starting Django development server..."
+python manage.py makemigrations users polls
+python manage.py migrate
+python manage.py runserver 0.0.0.0:8000 > /dev/null 2>&1 &
+SERVER_PID=$!
+
+# Wait for server to become available
+echo "Waiting for server to start..."
+attempt=0
+while [ $attempt -lt $((MAX_WAIT_SECONDS/RETRY_INTERVAL)) ]; do
+    if curl -s "$TEST_BASE_URL" > /dev/null; then
+        echo "Server is running at $TEST_BASE_URL"
+        break
+    fi
+    sleep $RETRY_INTERVAL
+    attempt=$((attempt+1))
+done
+
+if [ $attempt -eq $((MAX_WAIT_SECONDS/RETRY_INTERVAL)) ]; then
+    echo "Error: Server did not start within $MAX_WAIT_SECONDS seconds"
+    kill $SERVER_PID
+    exit 1
+fi
+
 # Run tests with coverage
+echo "Running integration tests..."
 pytest tests/integration_tests.py \
     --cov=. \
     --cov-report=xml:coverage.xml \
     --cov-fail-under=80 \
     --junitxml=test-results.xml \
-    -v
+    -v \
+    --durations=10
+
+# Capture test exit code
+TEST_EXIT_CODE=$?
+
+# Clean up
+echo "Stopping Django server..."
+kill $SERVER_PID
+wait $SERVER_PID 2>/dev/null
+
+exit $TEST_EXIT_CODE
