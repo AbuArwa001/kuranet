@@ -18,6 +18,7 @@ pytest --config-file=pytest.ini --collect-only > /dev/null
 
 # 4. Start Django server in background
 echo "🚀 Starting Django test server..."
+python manage.py makemigrations users polls
 python manage.py migrate
 python manage.py runserver 0.0.0.0:8000 & 
 SERVER_PID=$!
