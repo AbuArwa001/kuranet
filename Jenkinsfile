@@ -91,11 +91,12 @@ pipeline {
                             python -m venv ${VENV_PATH}
                             . ${VENV_PATH}/bin/activate
                             pip install -r requirements.txt
+                            pip install pytest pytest-django pytest-cov
                             pytest tests/integration_tests.py \
-                                                    --cov=. \
-                                                    --cov-report=xml:coverage.xml \
-                                                    -n auto \
-                                                    --cov-fail-under=80
+                                    --cov=. \
+                                    --cov-report=xml:coverage.xml \
+                                    -n auto \
+                                    --cov-fail-under=80
                         """
                     }
                 }
