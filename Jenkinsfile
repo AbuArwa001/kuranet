@@ -55,30 +55,29 @@ pipeline {
         }
 
         stage('Unit Tests') {
-            agent {
-                docker {
-                    image "${DOCKER_IMAGE}"
-                    args '-u root -v /tmp:/tmp'
-                    reuseNode true
-                }
-            }
             steps {
-                withCredentials([string(credentialsId: 'django-secret-key', variable: 'SECRET_KEY')]) {
-                        withEnv(["DJANGO_SECRET_KEY=${env.SECRET_KEY}"]) {
-                        sh '''
-                            python -m venv ${VENV_PATH}
-                            . ${VENV_PATH}/bin/activate
-                            pip install -r requirements.txt
-                            python  manage.py runserver --noreload &
-                            sleep 5  # Wait for the server to start
-                            pytest --ds=kuranet.settings --junitxml=tests/test-results.xml
-                        '''
-                        }
-                }
+                sh '''
+                    # Create fresh virtualenv
+                    python -m venv .venv
+                    source .venv/bin/activate
+                    
+                    # Install with coverage support
+                    pip install -r requirements.txt pytest-xdist
+                    
+                    # Run tests with coverage
+                    pytest -c pytest.ini
+                    
+                    # Fail if coverage too low
+                    if [ $(grep -oP 'coverage.*\K\d+' coverage.xml) -lt 80 ]; then
+                        echo "Coverage below 80%"
+                        exit 1
+                    fi
+                '''
             }
             post {
                 always {
-                    junit 'tests/test-results.xml'
+                    junit 'test-results.xml'
+                    publishCoverage adapters: [coberturaAdapter('coverage.xml')]
                 }
             }
         }
