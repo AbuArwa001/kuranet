@@ -8,7 +8,8 @@ pipeline {
         DOCKER_IMAGE = "python:3.12-slim"
         APP_DIR = "~/kuranet"
         VENV_PATH = "${APP_DIR}/.venv"
-        SSH_CREDENTIALS_ID = 'ssh-credentials'  // Changed to reference ID only
+        SSH_CREDENTIALS_ID = 'ssh-credentials'
+        DJANGO_SECRET_KEY = credentials('django-secret-key')
     }
 
     stages {
@@ -68,7 +69,7 @@ pipeline {
                             python -m venv ${VENV_PATH}
                             . ${VENV_PATH}/bin/activate
                             pip install -r requirements.txt
-                            python manage.py test polls.tests --verbosity=2 --failfast --junitxml=tests/test-results.xml
+                            pytest --ds=kuranet.settings --junitxml=tests/test-results.xml
                         '''
                         }
                 }
