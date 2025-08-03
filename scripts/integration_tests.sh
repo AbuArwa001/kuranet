@@ -11,10 +11,18 @@ RETRY_INTERVAL=2
 python -m venv $VENV_PATH
 source $VENV_PATH/bin/activate
 
-# Install dependencies
+# Install system dependencies (including curl if needed)
+if ! command -v curl &> /dev/null; then
+    echo "Installing curl..."
+    apt-get update && apt-get install -y curl  # For Debian/Ubuntu
+    # Or for Alpine: apk add curl
+    # Or for CentOS: yum install curl
+fi
+
+# Install Python dependencies
 pip install --upgrade pip
 pip install -r requirements.txt
-pip install pytest pytest-django pytest-cov pytest-xdist
+pip install pytest pytest-django pytest-cov pytest-xdist requests
 
 # Start Django server in background
 echo "Starting Django development server..."
@@ -23,11 +31,24 @@ python manage.py migrate
 python manage.py runserver 0.0.0.0:8000 > /dev/null 2>&1 &
 SERVER_PID=$!
 
+# Function to check server status using Python requests as fallback
+check_server() {
+    # Try curl first if available
+    if command -v curl &> /dev/null; then
+        curl -s "$TEST_BASE_URL" > /dev/null
+        return $?
+    else
+        # Fallback to Python requests
+        python -c "import requests; exit(0 if requests.get('$TEST_BASE_URL', timeout=2).status_code == 200 else 1)"
+        return $?
+    fi
+}
+
 # Wait for server to become available
 echo "Waiting for server to start..."
 attempt=0
 while [ $attempt -lt $((MAX_WAIT_SECONDS/RETRY_INTERVAL)) ]; do
-    if curl -s "$TEST_BASE_URL" > /dev/null; then
+    if check_server; then
         echo "Server is running at $TEST_BASE_URL"
         break
     fi
