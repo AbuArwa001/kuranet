@@ -100,12 +100,6 @@ pipeline {
 
 
         stage('Deploy to Production') {
-            when {
-                anyOf {
-                    branch 'main'
-                    branch 'release/*'
-                }
-            }
             agent any
             steps {
                 sshagent(credentials: [SSH_CREDENTIALS_ID]) {
