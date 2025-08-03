@@ -68,7 +68,7 @@ pipeline {
                     pytest -c pytest.ini
                     
                     # Fail if coverage too low
-                    if [ $(grep -oP 'coverage.*\K\d+' coverage.xml) -lt 80 ]; then
+                    if [ $(grep -oP 'coverage.*\\K\\d+' coverage.xml) -lt 80 ]; then
                         echo "Coverage below 80%"
                         exit 1
                     fi
