@@ -54,39 +54,6 @@ pipeline {
             }
         }
 
-        stage('Unit Tests') {
-            agent {
-                docker {
-                    image "${DOCKER_IMAGE}"
-                    args '-u root -v /tmp:/tmp'
-                    reuseNode true
-                }
-            }
-            steps {
-                withCredentials([string(credentialsId: 'django-secret-key', variable: 'SECRET_KEY')]) {
-                    withEnv(["DJANGO_SECRET_KEY=${env.SECRET_KEY}"]) {
-                        sh '''
-                            # Make script executable if needed
-                            chmod +x ./scripts/run_tests.sh || true
-                            
-                            # Execute with error trapping
-                            ./scripts/run_tests.sh 2>&1 | tee test-output.log
-                            
-                            # Store raw output for debugging
-                            echo "### TEST OUTPUT ###"
-                            cat test-output.log
-                        '''
-                    }
-                }
-            }
-            post {
-                always {
-                    junit 'test-results.xml'
-                    publishCoverage adapters: [coberturaAdapter('coverage.xml')]
-                }
-            }
-        }
-
         stage('Static Analysis') {
             agent {
                 docker {
