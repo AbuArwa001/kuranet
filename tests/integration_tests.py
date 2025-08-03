@@ -63,7 +63,7 @@ def test_protected_endpoints(test_user):
     token = auth_response.json()["access"]
     
     # Test protected endpoint - replace with your actual endpoint
-    protected_url = f"{BASE_URL}{API_PREFIX}users/me/"  # Example endpoint
+    protected_url = f"{BASE_URL}{API_PREFIX}users/"  # Example endpoint
     headers = {"Authorization": f"Bearer {token}"}
     
     # Test with valid token
