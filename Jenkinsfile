@@ -106,20 +106,27 @@ pipeline {
         // CI PHASE END
 
         stage('Integration Tests') {
-            agent any
+            agent {
+                docker {
+                    image "${DOCKER_IMAGE}"
+                    args '-u root -v /tmp:/tmp'
+                    reuseNode true
+                }
+            }
             steps {
-                script {
-                    withCredentials([string(credentialsId: 'django-secret-key', variable: 'SECRET_KEY')]) {
-                        withEnv(["DJANGO_SECRET_KEY=${env.SECRET_KEY}"]) {
-                            sh """
-                                pip install pytest requests
-                                python tests/integration_tests.py
-                            """
-                        }
+                withCredentials([string(credentialsId: 'django-secret-key', variable: 'SECRET_KEY')]) {
+                    withEnv(["DJANGO_SECRET_KEY=${env.SECRET_KEY}"]) {
+                        sh """
+                            python -m venv ${VENV_PATH}
+                            . ${VENV_PATH}/bin/activate
+                            pip install -r requirements.txt
+                            python tests/integration_tests.py
+                        """
                     }
                 }
             }
         }
+
 
         stage('Deploy to Production') {
             when {
