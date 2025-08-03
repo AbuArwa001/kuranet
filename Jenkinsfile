@@ -55,28 +55,40 @@ pipeline {
         }
 
         stage('Unit Tests') {
+            agent {  // Add agent context here
+                docker {
+                    image "${DOCKER_IMAGE}"
+                    args '-u root -v /tmp:/tmp'
+                    reuseNode true
+                }
+            }
             steps {
-                sh '''
-                    # Create fresh virtualenv
-                    python -m venv .venv
-                    source .venv/bin/activate
-                    
-                    # Install with coverage support
-                    pip install -r requirements.txt pytest-xdist
-                    
-                    # Run tests with coverage
-                    pytest -c pytest.ini
-                    
-                    # Fail if coverage too low
-                    if [ $(grep -oP 'coverage.*\\K\\d+' coverage.xml) -lt 80 ]; then
-                        echo "Coverage below 80%"
-                        exit 1
-                    fi
-                '''
+                withCredentials([string(credentialsId: 'django-secret-key', variable: 'SECRET_KEY')]) {
+                    withEnv(["DJANGO_SECRET_KEY=${env.SECRET_KEY}"]) {
+                        sh '''
+                            python -m venv ${VENV_PATH}
+                            . ${VENV_PATH}/bin/activate
+                            pip install -r requirements.txt pytest-xdist
+                            pytest -c pytest.ini
+                            
+                            # Simplified coverage check
+                            COVERAGE_PCT=$(python -c "\
+                                import xml.etree.ElementTree as ET; \
+                                print(int(float(ET.parse('coverage.xml').getroot().attrib['line-rate']) * 100))")
+                            
+                            echo "Coverage: ${COVERAGE_PCT}%"
+                            
+                            if [ ${COVERAGE_PCT} -lt 80 ]; then
+                                echo "Coverage below required 80%"
+                                exit 1
+                            fi
+                        '''
+                    }
+                }
             }
             post {
                 always {
-                    junit 'test-results.xml'
+                    junit 'test-results.xml'  // Now has proper node context
                     publishCoverage adapters: [coberturaAdapter('coverage.xml')]
                 }
             }
