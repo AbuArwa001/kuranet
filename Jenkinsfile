@@ -8,7 +8,7 @@ pipeline {
         DOCKER_IMAGE = "python:3.12-slim"
         APP_DIR = "~/kuranet"
         VENV_PATH = "${APP_DIR}/.venv"
-        SSH_CREDENTIALS_ID = 'ssh-credentials'
+        SSH_CREDENTIALS_ID = 'SSH_CREDENTIALS'
         DJANGO_SECRET_KEY = credentials('django-secret-key')
     }
 
@@ -91,7 +91,11 @@ pipeline {
                             python -m venv ${VENV_PATH}
                             . ${VENV_PATH}/bin/activate
                             pip install -r requirements.txt
-                            python tests/integration_tests.py
+                            pytest tests/integration_tests.py \
+                                                    --cov=. \
+                                                    --cov-report=xml:coverage.xml \
+                                                    -n auto \
+                                                    --cov-fail-under=80
                         """
                     }
                 }
