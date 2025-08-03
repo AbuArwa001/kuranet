@@ -128,7 +128,7 @@ pipeline {
                                         
                                         # Setup virtual environment and dependencies
                                         cd ${APP_DIR}
-                                        python -m venv ${VENV_PATH}
+                                        python3 -m venv ${VENV_PATH}
                                         . ${VENV_PATH}/bin/activate
                                         pip install --upgrade pip
                                         pip install -r requirements.txt || {
