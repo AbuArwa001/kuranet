@@ -64,14 +64,20 @@ fi
 
 # Run tests with coverage
 echo "Running integration tests..."
-pytest tests/integration_tests.py \
+# pytest tests/integration_tests.py \
+#     --cov=. \
+#     --cov-report=xml:coverage.xml \
+#     --cov-fail-under=80 \
+#     --junitxml=test-results.xml \
+#     -v \
+#     --durations=10
+pytest tests/ \
     --cov=. \
     --cov-report=xml:coverage.xml \
+    --cov-config=.coveragerc \
     --cov-fail-under=80 \
     --junitxml=test-results.xml \
-    -v \
-    --durations=10
-
+    -v
 # Capture test exit code
 TEST_EXIT_CODE=$?
 
@@ -81,3 +87,4 @@ kill $SERVER_PID
 wait $SERVER_PID 2>/dev/null
 
 exit $TEST_EXIT_CODE
+
