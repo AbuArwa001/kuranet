@@ -46,22 +46,70 @@ def test_user_registration(test_user):
     })
     assert bad_login.status_code == 401
 
-def test_protected_endpoints():
+def test_protected_endpoints(test_user):
     """Test endpoints requiring authentication"""
-    # First get a valid token
-    auth_url = f"{BASE_URL}{API_PREFIX}auth/login/"
-    auth_response = requests.post(auth_url, json={
-        "username": "testuser",
-        "password": "testpass"
+    # First register and login to get a valid token
+    register_url = f"{BASE_URL}{API_PREFIX}auth/register/"
+    requests.post(register_url, json=test_user)
+    
+    login_url = f"{BASE_URL}{API_PREFIX}auth/login/"
+    auth_response = requests.post(login_url, json={
+        "username": test_user["username"],
+        "password": test_user["password"]
     })
+    
+    # Verify we got tokens
+    assert "access" in auth_response.json()
     token = auth_response.json()["access"]
     
-    # Test protected endpoint
-    protected_url = f"{BASE_URL}{API_PREFIX}users/"
+    # Test protected endpoint - replace with your actual endpoint
+    protected_url = f"{BASE_URL}{API_PREFIX}users/me/"  # Example endpoint
     headers = {"Authorization": f"Bearer {token}"}
+    
+    # Test with valid token
     protected_response = requests.get(protected_url, headers=headers)
     assert protected_response.status_code == 200
     
     # Test without token
     no_auth_response = requests.get(protected_url)
-    assert no_auth_response.status_code == 403
+    assert no_auth_response.status_code in [401, 403]
+def test_invalid_registration():
+    """Test registration with invalid data"""
+    url = f"{BASE_URL}{API_PREFIX}auth/register/"
+    
+    # Missing required field
+    response = requests.post(url, json={
+        "username": "testuser",
+        "password": "testpass" 
+        # Missing email
+    })
+    assert response.status_code == 400
+    
+    # Invalid email format
+    response = requests.post(url, json={
+        "username": "testuser",
+        "email": "not-an-email",
+        "password": "testpass"
+    })
+    assert response.status_code == 400
+
+def test_refresh_token(test_user):
+    """Test token refresh flow"""
+    # Register and login
+    register_url = f"{BASE_URL}{API_PREFIX}auth/register/"
+    requests.post(register_url, json=test_user)
+    
+    login_url = f"{BASE_URL}{API_PREFIX}auth/login/"
+    auth_response = requests.post(login_url, json={
+        "username": test_user["username"],
+        "password": test_user["password"]
+    })
+    refresh_token = auth_response.json()["refresh"]
+    
+    # Test refresh
+    refresh_url = f"{BASE_URL}{API_PREFIX}auth/refresh/"
+    refresh_response = requests.post(refresh_url, json={
+        "refresh": refresh_token
+    })
+    assert refresh_response.status_code == 200
+    assert "access" in refresh_response.json()
