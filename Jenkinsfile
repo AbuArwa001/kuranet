@@ -101,7 +101,10 @@ pipeline {
 
         stage('Deploy to Production') {
             when {
-                branch 'main'
+                anyOf {
+                    branch 'main'
+                    branch 'release/*'
+                }
             }
             agent any
             steps {
