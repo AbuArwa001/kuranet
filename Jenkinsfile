@@ -63,18 +63,19 @@ pipeline {
             }
             steps {
                 withCredentials([string(credentialsId: 'django-secret-key', variable: 'SECRET_KEY')]) {
-                    sh """
-                        python -m venv ${VENV_PATH}
-                        . ${VENV_PATH}/bin/activate
-                        pip install -r requirements.txt
-                        export DJANGO_SECRET_KEY=${SECRET_KEY}
-                        python manage.py test polls.tests --verbosity=2 --failfast --junitxml=test-results.xml
-                    """
+                        withEnv(["DJANGO_SECRET_KEY=${env.SECRET_KEY}"]) {
+                        sh '''
+                            python -m venv ${VENV_PATH}
+                            . ${VENV_PATH}/bin/activate
+                            pip install -r requirements.txt
+                            python manage.py test polls.tests --verbosity=2 --failfast --junitxml=tests/test-results.xml
+                        '''
+                        }
                 }
             }
             post {
                 always {
-                    junit 'test-results.xml'
+                    junit 'tests/test-results.xml'
                 }
             }
         }
