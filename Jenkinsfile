@@ -105,59 +105,33 @@ pipeline {
                         retry(3) {
                             sh """
                                 for IP in ${WEB1_IP} ${WEB2_IP}; do
-                                    TIMESTAMP=\$(date +%Y%m%d_%H%M)
                                     ssh -o StrictHostKeyChecking=no ubuntu@\${IP} "
-                                        # Backup existing directory
-                                        [ -d ${APP_DIR} ] && mv ${APP_DIR} ${APP_DIR}_bak_\${TIMESTAMP}
-                                        # rm directory if it exists
-                                        [ -d ${APP_DIR} ] &&  \
-                                        echo 'Removing existing application directory' && \
-                                        rm -rf ${APP_DIR} || true
+                                        cd ${APP_DIR} || exit 1
                                         
-                                        # Clone repo to correct location
-                                        git clone ${REPO} || {
-                                            echo 'Failed to clone repository'
-                                            exit 1
-                                        }
+                                        # Reset all local changes and untracked files
+                                        git reset --hard HEAD || exit 1
+                                        git clean -fd || exit 1
                                         
-                                        # Copy environment file
-                                        cp ~/.env ${APP_DIR}/ || {
-                                            echo 'Failed to copy .env file'
-                                            exit 1
-                                        }
+                                        # Pull updates (use --ff-only to prevent merge commits)
+                                        git pull --ff-only origin main || exit 1
                                         
-                                        # Setup virtual environment and dependencies
-                                        cd ${APP_DIR}
-                                        python3 -m venv ${VENV_PATH}
-                                        . ${VENV_PATH}/bin/activate
-                                        pip install --upgrade pip
-                                        pip install -r requirements.txt || {
-                                            echo 'Failed to install requirements'
-                                            exit 1
-                                        }
+                                        # Recreate .env if needed
+                                        [ -f ~/.env ] && cp ~/.env . || true
                                         
-                                        # Run Django management commands
-                                        python manage.py makemigrations users polls
-                                        python manage.py migrate || {
-                                            echo 'Database migration failed'
-                                            exit 1
-                                        }
+                                        # Reinstall dependencies
+                                        source ${VENV_PATH}/bin/activate
+                                        pip install -r requirements.txt || exit 1
                                         
-                                        python manage.py collectstatic --noinput || {
-                                            echo 'Static files collection failed'
-                                            exit 1
-                                        }
+                                        # Django operations
+                                        python manage.py makemigrations users polls || exit 1
+                                        python manage.py migrate --noinput || exit 1
+                                        python manage.py collectstatic --noinput || true
                                         
-                                        # Restart service
-                                        sudo systemctl restart gunicorn || {
-                                            echo 'Failed to restart gunicorn'
-                                            exit 1
-                                        }
+                                        sudo systemctl restart gunicorn || exit 1
+                                        echo \"Deployed commit: \$(git rev-parse --short HEAD)\"
                                     " || {
-                                        echo "Deployment failed on \${IP}"
-                                        exit 1
+                                        echo "Failed on \${IP}"; exit 1
                                     }
-                                    echo "Successfully deployed to \${IP}"
                                 done
                             """
                         }
@@ -184,6 +158,8 @@ pipeline {
                     discordSend(
                         description: "Deployment Successful: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                         link: env.BUILD_URL,
+                        imageURL: "${env.BUILD_URL}/artifact/static/logo.png",
+                        footer: "Deployed by Jenkins",
                         webhookURL: "${DISCORD_WEBHOOK_URL}"
                     )
                 }
@@ -195,6 +171,8 @@ pipeline {
                     discordSend(
                         description: "Build Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                         link: env.BUILD_URL,
+                        imageURL: "${env.BUILD_URL}/artifact/static/logo.png",
+                        footer: "Deployment failed",
                         webhookURL: "${DISCORD_WEBHOOK_URL}"
                     )
                 }

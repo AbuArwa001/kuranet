@@ -133,9 +133,6 @@ pipeline {
 
 
         stage('Deploy to Production') {
-            when {
-                branch 'main'
-            }
             agent any
             steps {
                 sshagent(credentials: [SSH_CREDENTIALS_ID]) {
@@ -143,21 +140,59 @@ pipeline {
                         retry(3) {
                             sh """
                                 for IP in ${WEB1_IP} ${WEB2_IP}; do
-                                    TIMESTAMP=\$(date +%Y%m%d_%H%M) && \\
-                                    ssh -o StrictHostKeyChecking=no ubuntu@\${IP} '
-                                        mv ${APP_DIR} ${APP_DIR}_bak_\${TIMESTAMP} && \\
-                                        mkdir -p ${APP_DIR} && \\
-                                        git clone ${REPO} ~/ && \\
-                                        cp ~/.env ${APP_DIR} && \\
-                                        cd ${APP_DIR} && \\
-                                        python -m venv ${VENV_PATH} && \\
-                                        . ${VENV_PATH}/bin/activate && \\
-                                        pip install -r requirements.txt && \\
-                                        python manage.py makemigrations users polls && \\
-                                        python manage.py migrate && \\
-                                        python manage.py collectstatic --noinput && \\
-                                        sudo systemctl restart gunicorn
-                                    '
+                                    TIMESTAMP=\$(date +%Y%m%d_%H%M)
+                                    ssh -o StrictHostKeyChecking=no ubuntu@\${IP} "
+                                        # Backup existing directory
+                                        [ -d ${APP_DIR} ] && mv ${APP_DIR} ${APP_DIR}_bak_\${TIMESTAMP}
+                                        # rm directory if it exists
+                                        [ -d ${APP_DIR} ] &&  \
+                                        echo 'Removing existing application directory' && \
+                                        rm -rf ${APP_DIR} || true
+                                        
+                                        # Clone repo to correct location
+                                        git clone ${REPO} || {
+                                            echo 'Failed to clone repository'
+                                            exit 1
+                                        }
+                                        
+                                        # Copy environment file
+                                        cp ~/.env ${APP_DIR}/ || {
+                                            echo 'Failed to copy .env file'
+                                            exit 1
+                                        }
+                                        
+                                        # Setup virtual environment and dependencies
+                                        cd ${APP_DIR}
+                                        python3 -m venv ${VENV_PATH}
+                                        . ${VENV_PATH}/bin/activate
+                                        pip install --upgrade pip
+                                        pip install -r requirements.txt || {
+                                            echo 'Failed to install requirements'
+                                            exit 1
+                                        }
+                                        
+                                        # Run Django management commands
+                                        python manage.py makemigrations users polls
+                                        python manage.py migrate || {
+                                            echo 'Database migration failed'
+                                            exit 1
+                                        }
+                                        
+                                        python manage.py collectstatic --noinput || {
+                                            echo 'Static files collection failed'
+                                            exit 1
+                                        }
+                                        
+                                        # Restart service
+                                        sudo systemctl restart gunicorn || {
+                                            echo 'Failed to restart gunicorn'
+                                            exit 1
+                                        }
+                                    " || {
+                                        echo "Deployment failed on \${IP}"
+                                        exit 1
+                                    }
+                                    echo "Successfully deployed to \${IP}"
                                 done
                             """
                         }
