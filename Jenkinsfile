@@ -69,6 +69,8 @@ pipeline {
                             python -m venv ${VENV_PATH}
                             . ${VENV_PATH}/bin/activate
                             pip install -r requirements.txt
+                            python  manage.py runserver --noreload &
+                            sleep 5  # Wait for the server to start
                             pytest --ds=kuranet.settings --junitxml=tests/test-results.xml
                         '''
                         }
