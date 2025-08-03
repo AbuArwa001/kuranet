@@ -154,8 +154,9 @@ pipeline {
                         retry(3) {
                             sh """
                                 for IP in ${WEB1_IP} ${WEB2_IP}; do
+                                    TIMESTAMP=$(date +%Y%m%d_%H%M) && \
                                     ssh -o StrictHostKeyChecking=no ubuntu@\$IP '
-                                        rm -rf ${APP_DIR} && \
+                                        mv  ${APP_DIR}  ${APP_DIR}_bak_${TIMESTAMP} && \
                                         mkdir -p ${APP_DIR} && \
                                         git clone ${REPO} ~/ && \
                                         cp ~/.env ${APP_DIR} && \
@@ -163,7 +164,9 @@ pipeline {
                                         python -m venv ${VENV_PATH} && \
                                         . ${VENV_PATH}/bin/activate && \
                                         pip install -r requirements.txt && \
+                                        python manage.py makemigrations users polls && \
                                         python manage.py migrate && \
+                                        python manage.py collectstatic --noinput && \
                                         sudo systemctl restart gunicorn
                                     '
                                 done
