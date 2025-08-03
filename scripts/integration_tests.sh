@@ -8,7 +8,7 @@ source ~/kuranet/.venv/bin/activate
 # Install dependencies
 pip install --upgrade pip
 pip install -r requirements.txt
-pip install pytest pytest-django pytest-cov
+pip install pytest pytest-django pytest-cov pytest-xdist
 
 # Run tests with coverage
 pytest tests/integration_tests.py \

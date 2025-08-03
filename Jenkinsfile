@@ -88,11 +88,8 @@ pipeline {
                 withCredentials([string(credentialsId: 'django-secret-key', variable: 'SECRET_KEY')]) {
                     withEnv(["DJANGO_SECRET_KEY=${env.SECRET_KEY}"]) {
                         sh """
-                            python -m venv ${VENV_PATH}
-                            . ${VENV_PATH}/bin/activate
-                            pip install -r requirements.txt
-                            pip install pytest pytest-django pytest-cov
-                            pytest tests/integration_tests.py --cov=. --cov-report=xml:coverage.xml --cov-fail-under=80
+                            chmod +x ./scripts/integration_tests.sh || true
+                            ./scripts/integration_tests.sh
                         """
                     }
                 }
