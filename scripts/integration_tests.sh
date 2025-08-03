@@ -15,4 +15,5 @@ pytest tests/integration_tests.py \
     --cov=. \
     --cov-report=xml:coverage.xml \
     --cov-fail-under=80 \
-    --junitxml=test-results.xml
+    --junitxml=test-results.xml \
+    -v
