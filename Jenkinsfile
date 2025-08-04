@@ -25,7 +25,7 @@ pipeline {
             agent {
                 docker {
                     image "${DOCKER_IMAGE}"
-                    args '-u root -v /tmp:/tmp'
+                    args '-u 1001:1001 -v /tmp:/tmp --workdir /app'
                     reuseNode true
                 }
             }
@@ -58,7 +58,7 @@ pipeline {
             agent {
                 docker {
                     image "${DOCKER_IMAGE}"
-                    args '-u root -v /tmp:/tmp'
+                    args '-u 1001:1001 -v /tmp:/tmp --workdir /app'
                     reuseNode true
                 }
             }
@@ -80,18 +80,32 @@ pipeline {
             agent {
                 docker {
                     image "${DOCKER_IMAGE}"
-                    args '-u root -v /tmp:/tmp'
+                    args '-u 1001:1001 -v /tmp:/tmp --workdir /app'
                     reuseNode true
                 }
             }
+            environment {
+                DJANGO_SECRET_KEY = credentials('django-secret-key')
+                PYTHONUNBUFFERED = '1'
+            }
             steps {
-                withCredentials([
-                    string(credentialsId: 'django-secret-key', variable: 'DJANGO_SECRET_KEY')
-                ]) {
-                    sh """
-                        chmod +x ./scripts/integration_tests.sh || true
-                        ./scripts/integration_tests.sh
-                    """
+                sh '''
+                    # Create and activate virtual environment
+                    python -m venv venv
+                    . venv/bin/activate
+                    
+                    # Install dependencies safely
+                    pip install --no-warn-script-location -r requirements.txt
+                    
+                    # Make script executable and run tests
+                    chmod +x ./scripts/integration_tests.sh
+                    ./scripts/integration_tests.sh
+                '''
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'test-results.xml, coverage.xml', allowEmptyArchive: true
+                    junit 'test-results.xml'
                 }
             }
         }
