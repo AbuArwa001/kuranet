@@ -85,13 +85,13 @@ pipeline {
                 }
             }
             steps {
-                withCredentials([string(credentialsId: 'django-secret-key', variable: 'SECRET_KEY')]) {
-                    withEnv(["DJANGO_SECRET_KEY=${env.SECRET_KEY}"]) {
-                        sh """
-                            chmod +x ./scripts/integration_tests.sh || true
-                            ./scripts/integration_tests.sh
-                        """
-                    }
+                withCredentials([
+                    string(credentialsId: 'django-secret-key', variable: 'DJANGO_SECRET_KEY')
+                ]) {
+                    sh """
+                        chmod +x ./scripts/integration_tests.sh || true
+                        ./scripts/integration_tests.sh
+                    """
                 }
             }
         }
@@ -187,11 +187,10 @@ pipeline {
                             description: "✅ Deployment Successful: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                             link: env.BUILD_URL,
                             result: currentBuild.result,
-                            webhookURL: "${DISCORD_WEBHOOK_URL}",
+                            webhookURL: env.DISCORD_WEBHOOK_URL,
                             title: "Deployed commit: ${commit}",
                             footer: "Test coverage: ${coverage}%",
-                            color: "65280" // Green
-                        )
+                        ).setColor("65280") // Green
                     }
                 }
             }
@@ -205,10 +204,10 @@ pipeline {
                             description: "❌ Deployment Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                             link: env.BUILD_URL,
                             result: currentBuild.result,
-                            webhookURL: "${DISCORD_WEBHOOK_URL}",
+                            webhookURL: env.DISCORD_WEBHOOK_URL,,
                             title: "Failed commit: ${sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()}",
-                            color: "16711680" // Red
-                        )
+                            footer: "Check the build logs for details.",
+                        ).setColor("16711680") // Red
                     }
                 }
             }
@@ -228,11 +227,10 @@ pipeline {
                             description: "⚠️ Deployment Unstable: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                             link: env.BUILD_URL,
                             result: currentBuild.result,
-                            webhookURL: "${DISCORD_WEBHOOK_URL}",
+                            webhookURL: env.DISCORD_WEBHOOK_URL,
                             title: "Unstable issues detected",
                             footer: "${issues}",
-                            color: "16753920" // Orange
-                        )
+                        ).setColor("16753920") // Orange
                     }
                 }
             }
