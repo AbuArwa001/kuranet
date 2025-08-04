@@ -104,29 +104,46 @@ pipeline {
                     withCredentials([string(credentialsId: 'django-secret-key', variable: 'SECRET_KEY')]) {
                         retry(3) {
                             sh """
-                                for IP in ${WEB1_IP} ${WEB2_IP}; do
+                                for IP in ${WEB1_IP}; do
                                     ssh -o StrictHostKeyChecking=no ubuntu@\${IP} "
+                                        # First configure passwordless sudo for deployment
+                                        echo 'ubuntu ALL=(ALL) NOPASSWD: /bin/rm -rf ${APP_DIR}/static/, /bin/rm -rf ${APP_DIR}/staticfiles/, /usr/bin/systemctl restart gunicorn' | sudo tee /etc/sudoers.d/kuranet-deploy
+                                        sudo chmod 0440 /etc/sudoers.d/kuranet-deploy
+                                        
                                         cd ${APP_DIR} || exit 1
                                         
-                                        # Reset all local changes and untracked files
+                                        # Reset repository state
                                         git reset --hard HEAD || exit 1
-                                        git clean -fd || exit 1
                                         
-                                        # Pull updates (use --ff-only to prevent merge commits)
-                                        git pull --ff-only origin main || exit 1
+                                        # Clean static files using passwordless sudo
+                                        sudo /bin/rm -rf ${APP_DIR}/static/ || true
+                                        sudo /bin/rm -rf ${APP_DIR}/staticfiles/ || true
+                                        mkdir -p staticfiles || true
+                                        mkdir -p static || true
+                                        
+                                        # Pull updates safely
+                                        git fetch origin main || exit 1
+                                        git checkout main || exit 1
+                                        git reset --hard origin/main || exit 1
                                         
                                         # Recreate .env if needed
                                         [ -f ~/.env ] && cp ~/.env . || true
                                         
                                         # Reinstall dependencies
                                         source ${VENV_PATH}/bin/activate
+                                        pip install -U pip || true
                                         pip install -r requirements.txt || exit 1
                                         
                                         # Django operations
                                         python manage.py makemigrations users polls || exit 1
                                         python manage.py migrate --noinput || exit 1
-                                        python manage.py collectstatic --noinput || true
                                         
+                                        # Collect static with correct permissions
+                                        python manage.py collectstatic --noinput || true
+                                        sudo chown -R www-data:www-data static/ || true
+                                        sudo chown -R www-data:www-data staticfiles/ || true
+                                        
+                                        # Restart services using passwordless sudo
                                         sudo systemctl restart gunicorn || exit 1
                                         echo \"Deployed commit: \$(git rev-parse --short HEAD)\"
                                     " || {
