@@ -164,73 +164,57 @@ pipeline {
 
     post {
         always {
-            // Steps that should always run, regardless of build status.
-            // These already have a 'node' block, which is correct.
             script {
+                // Use a node for steps that require an executor
                 node {
                     // Archive test results and artifacts even if build fails
                     junit '**/test-results.xml'
                     archiveArtifacts artifacts: '**/*-report.txt,**/test-results.xml', allowEmptyArchive: true
-
-                    // Clean up workspace to prevent disk space issues
+                    
+                    // Clean up workspace
                     cleanWs()
                 }
             }
         }
+        
         success {
             script {
-                node {
+                // Discord notification doesn't need a node context
+                if (currentBuild.result == 'SUCCESS') {
                     withCredentials([string(credentialsId: 'discord-webhook-url', variable: 'DISCORD_WEBHOOK_URL')]) {
                         discordSend(
                             description: "Deployment Successful: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                             link: env.BUILD_URL,
-                            message: "Successfully deployed commit: ${sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()}",
-                            footer: "Deployed by Jenkins at ${new Date().format('yyyy-MM-dd HH:mm:ss')}",
-                            color: '65280', // Green
-                            title: "✅ Deployment Success",
-                            titleLink: env.BUILD_URL,
-                            thumbnail: "${env.BUILD_URL}/artifact/static/logo.png",
+                            result: currentBuild.result,
                             webhookURL: "${DISCORD_WEBHOOK_URL}"
                         )
                     }
                 }
             }
         }
+        
         failure {
             script {
-                node { 
-                    withCredentials([string(credentialsId: 'discord-webhook-url', variable: 'DISCORD_WEBHOOK_URL')]) {
-                        discordSend(
-                            description: "Deployment Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                            link: env.BUILD_URL,
-                            message: "Failed to deploy commit: ${sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()}",
-                            footer: "Failed at ${new Date().format('yyyy-MM-dd HH:mm:ss')}",
-                            color: '16711680', // Red
-                            title: "❌ Deployment Failure",
-                            titleLink: env.BUILD_URL,
-                            thumbnail: "${env.BUILD_URL}/artifact/static/logo.png",
-                            webhookURL: "${DISCORD_WEBHOOK_URL}"
-                        )
-                    }
+                withCredentials([string(credentialsId: 'discord-webhook-url', variable: 'DISCORD_WEBHOOK_URL')]) {
+                    discordSend(
+                        description: "Deployment Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                        link: env.BUILD_URL,
+                        result: currentBuild.result,
+                        webhookURL: "${DISCORD_WEBHOOK_URL}"
+                    )
                 }
             }
         }
+        
         unstable {
             script {
-                node { 
-                    withCredentials([string(credentialsId: 'discord-webhook-url', variable: 'DISCORD_WEBHOOK_URL')]) {
-                        discordSend(
-                            description: "Deployment Unstable: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                            link: env.BUILD_URL,
-                            message: "Deployment completed with warnings for commit: ${sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()}",
-                            footer: "Completed at ${new Date().format('yyyy-MM-dd HH:mm:ss')}",
-                            color: '16753920',
-                            title: "⚠️ Deployment Unstable",
-                            titleLink: env.BUILD_URL,
-                            thumbnail: "${env.BUILD_URL}/artifact/static/logo.png",
-                            webhookURL: "${DISCORD_WEBHOOK_URL}"
-                        )
-                    }
+                withCredentials([string(credentialsId: 'discord-webhook-url', variable: 'DISCORD_WEBHOOK_URL')]) {
+                    discordSend(
+                        description: "Deployment Unstable: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                        link: env.BUILD_URL,
+                        result: currentBuild.result,
+                        webhookURL: "${DISCORD_WEBHOOK_URL}"
+                    )
                 }
             }
         }
