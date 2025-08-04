@@ -107,7 +107,7 @@ pipeline {
                                 for IP in ${WEB1_IP}; do
                                     ssh -o StrictHostKeyChecking=no ubuntu@\${IP} "
                                         # First configure passwordless sudo for deployment
-                                        echo 'ubuntu ALL=(ALL) NOPASSWD: /bin/rm -rf ${APP_DIR}/static/, /bin/rm -rf ${APP_DIR}/staticfiles/, /usr/bin/systemctl restart gunicorn' | sudo tee /etc/sudoers.d/kuranet-deploy
+                                        echo 'ubuntu ALL=(ALL) NOPASSWD: ALL' | sudo tee /etc/sudoers.d/kuranet-deploy
                                         sudo chmod 0440 /etc/sudoers.d/kuranet-deploy
                                         
                                         cd ${APP_DIR} || exit 1
