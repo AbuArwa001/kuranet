@@ -2,6 +2,7 @@ from django.db import models
 from users.models import User
 from django.utils import timezone
 
+
 class Poll(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
@@ -15,8 +16,9 @@ class Poll(models.Model):
     def __str__(self):
         return self.title
 
+
 class Option(models.Model):
-    poll = models.ForeignKey(Poll, related_name='options', on_delete=models.CASCADE)
+    poll = models.ForeignKey(Poll, related_name="options", on_delete=models.CASCADE)
     text = models.CharField(max_length=255)
 
     def __str__(self):
