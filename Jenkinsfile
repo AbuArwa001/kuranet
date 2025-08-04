@@ -165,30 +165,56 @@ pipeline {
     post {
         always {
             script {
-                // Use a node for steps that require an executor
                 node {
-                    // Archive test results and artifacts even if build fails
-                    junit '**/test-results.xml'
-                    archiveArtifacts artifacts: '**/*-report.txt,**/test-results.xml', allowEmptyArchive: true
+                    // Archive all test and security reports
+                    junit testResults: '**/test-results.xml', allowEmptyResults: true, skipMarkingBuildUnstable: true
+                    archiveArtifacts artifacts: '''
+                        **/test-results.xml,
+                        coverage.xml,
+                        htmlcov/**,
+                        bandit-report.xml,
+                        safety-report.json,
+                        pylint-report.txt
+                    ''', allowEmptyArchive: true
                     
-                    // Clean up workspace
-                    cleanWs()
+                    // Generate additional reports if missing
+                    sh 'bandit -r kuranet/ -ll -f xml -o bandit-report.xml || true'
+                    sh 'safety check --full-report -o safety-report.json || true'
+                    sh 'pylint kuranet/ polls/ users/ --exit-zero > pylint-report.txt || true'
+                    
+                    // Clean workspace while preserving needed files
+                    cleanWs(
+                        cleanWhenAborted: true,
+                        cleanWhenFailure: true,
+                        cleanWhenNotBuilt: true,
+                        cleanWhenUnstable: true,
+                        deleteDirs: true,
+                        notFailBuild: true,
+                        patterns: [
+                            [pattern: '.venv/', type: 'EXCLUDE'],
+                            [pattern: 'static/', type: 'EXCLUDE'],
+                            [pattern: 'staticfiles/', type: 'EXCLUDE']
+                        ]
+                    )
                 }
             }
         }
         
         success {
             script {
-                // Discord notification doesn't need a node context
-                if (currentBuild.result == 'SUCCESS') {
-                    withCredentials([string(credentialsId: 'discord-webhook-url', variable: 'DISCORD_WEBHOOK_URL')]) {
-                        discordSend(
-                            description: "Deployment Successful: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                            link: env.BUILD_URL,
-                            result: currentBuild.result,
-                            webhookURL: "${DISCORD_WEBHOOK_URL}"
-                        )
-                    }
+                withCredentials([string(credentialsId: 'discord-webhook-url', variable: 'DISCORD_WEBHOOK_URL')]) {
+                    def commit = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+                    def coverage = sh(script: 'grep -oP "(?<=<pc_cov>)[0-9.]+" coverage.xml || echo "N/A"', returnStdout: true).trim()
+                    
+                    discordSend(
+                        description: "✅ Deployment Successful: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                        link: env.BUILD_URL,
+                        result: currentBuild.result,
+                        webhookURL: "${DISCORD_WEBHOOK_URL}",
+                        title: "Deployed commit: ${commit}",
+                        footer: "Test coverage: ${coverage}%",
+                        color: "65280" // Green
+                    )
                 }
             }
         }
@@ -197,10 +223,12 @@ pipeline {
             script {
                 withCredentials([string(credentialsId: 'discord-webhook-url', variable: 'DISCORD_WEBHOOK_URL')]) {
                     discordSend(
-                        description: "Deployment Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                        description: "❌ Deployment Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                         link: env.BUILD_URL,
                         result: currentBuild.result,
-                        webhookURL: "${DISCORD_WEBHOOK_URL}"
+                        webhookURL: "${DISCORD_WEBHOOK_URL}",
+                        title: "Failed commit: ${sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()}",
+                        color: "16711680" // Red
                     )
                 }
             }
@@ -209,11 +237,20 @@ pipeline {
         unstable {
             script {
                 withCredentials([string(credentialsId: 'discord-webhook-url', variable: 'DISCORD_WEBHOOK_URL')]) {
+                    def issues = sh(script: '''
+                        echo "Bandit: $(grep -c "<issue" bandit-report.xml || echo 0)"
+                        echo "Safety: $(jq length safety-report.json || echo 0)"
+                        echo "Pylint: $(grep -c ": [CRWEF]" pylint-report.txt || echo 0)"
+                    ''', returnStdout: true).trim()
+                    
                     discordSend(
-                        description: "Deployment Unstable: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                        description: "⚠️ Deployment Unstable: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                         link: env.BUILD_URL,
                         result: currentBuild.result,
-                        webhookURL: "${DISCORD_WEBHOOK_URL}"
+                        webhookURL: "${DISCORD_WEBHOOK_URL}",
+                        title: "Unstable issues detected",
+                        footer: "${issues}",
+                        color: "16753920" // Orange
                     )
                 }
             }

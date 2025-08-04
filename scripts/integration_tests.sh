@@ -64,20 +64,19 @@ fi
 
 # Run tests with coverage
 echo "Running integration tests..."
-# pytest tests/integration_tests.py \
-#     --cov=. \
-#     --cov-report=xml:coverage.xml \
-#     --cov-fail-under=80 \
-#     --junitxml=test-results.xml \
-#     -v \
-#     --durations=10
+
 pytest tests/ \
-    --cov=. \
+    --cov=kuranet/ \  # Be specific about what to cover
     --cov-report=xml:coverage.xml \
+    --cov-report=html:htmlcov \
     --cov-config=.coveragerc \
     --cov-fail-under=30 \
     --junitxml=test-results.xml \
-    -v
+    --durations=10 \
+    -v \
+    --no-header \
+    --tb=native
+
 # Capture test exit code
 TEST_EXIT_CODE=$?
 
