@@ -19,6 +19,9 @@ load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# NOTE: SECURE_PROXY_SSL_HEADER appears twice in this file
+# TODO: Remove duplicate after merging active feature branches
+
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Quick-start development settings - unsuitable for production
@@ -187,6 +190,8 @@ STATIC_URL = "/static/"
 # ]
 
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# Custom static files handling - checks if static directory exists
 STATICFILES_DIRS = [
     (
         os.path.join(BASE_DIR, "static")
@@ -195,6 +200,9 @@ STATICFILES_DIRS = [
     ),
 ]
 STATICFILES_DIRS = [d for d in STATICFILES_DIRS if d is not None]
+
+
+# SSL settings for production deployment
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_SSL_REDIRECT = False  # Optional: Force HTTPS

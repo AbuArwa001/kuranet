@@ -1,3 +1,5 @@
+<!-- TODO: Remove repeated content -->
+
 # KuraNet
 
 ## Overview

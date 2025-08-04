@@ -1,17 +1,42 @@
+"""
+Integration tests for Kuranet API endpoints.
+
+This module contains end-to-end tests that verify the API functionality
+by making actual HTTP requests to a running Django server. Tests cover
+user authentication, registration, and protected endpoint access.
+
+Requirements:
+    - Django server running at TEST_BASE_URL
+    - Database with users and auth apps migrated
+    - Environment variable TEST_BASE_URL (optional)
+
+Usage:
+    pytest tests/integration_tests.py
+"""
+
 import os
 import requests
 import pytest
 import uuid
 from dotenv import load_dotenv
 
+# Load environment variables from .env file
 load_dotenv()
 
+# Configuration for integration tests
 BASE_URL = os.getenv("TEST_BASE_URL", "http://localhost:8000")
 API_PREFIX = "/api/v1/"
 
 
 @pytest.fixture
 def test_user():
+    """
+    Create a unique test user for each test.
+    
+    Returns:
+        dict: User data with unique username and email to avoid conflicts
+    """
+    
     return {
         "username": f"testuser_{uuid.uuid4()}",
         "email": f"test{uuid.uuid4().hex[:8]}@kuranet.com",
@@ -19,6 +44,9 @@ def test_user():
     }
 
 
+# =============================================================================
+# Authentication Tests
+# =============================================================================
 def test_user_registration(test_user):
     """Test user registration endpoint"""
     # Test successful registration
@@ -45,6 +73,9 @@ def test_user_registration(test_user):
     assert bad_login.status_code == 401
 
 
+# =============================================================================
+# Authorization Tests  
+# =============================================================================
 def test_protected_endpoints(test_user):
     """Test endpoints requiring authentication"""
     # First register and login to get a valid token

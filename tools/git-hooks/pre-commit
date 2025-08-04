@@ -1,15 +1,41 @@
 #!/bin/sh
 
+# Git Pre-commit Hook - Branch Protection
+#
+# This hook prevents direct commits to protected branches (main, develop)
+# and enforces Git Flow branching strategy.
+#
+# Installation:
+#   Copy this file to .git/hooks/pre-commit
+#   Make executable: chmod +x .git/hooks/pre-commit
+#
+# Behavior:
+#   - Blocks commits to 'main' and 'develop' branches
+#   - Allows commits on feature/, release/, hotfix/ branches
+#   - Bypasses restrictions for specified maintainer emails
+#
+# To bypass (emergency use only):
+#   git commit --no-verify
+
+# Get current git user email and branch name
+
 GIT_USER_EMAIL=$(git config user.email)
 BRANCH=$(git symbolic-ref --short HEAD)
 
-# Allow specific git user to bypass
+
+# Allow project maintainers to bypass branch protection
+# TODO: Consider moving these to a config file for easier management
+
 if [ "$GIT_USER_EMAIL" = "AbuArwa001" ] || [ "$GIT_USER_EMAIL" = "khalfanathman12@yahoo.com" ]; then
   exit 0
 fi
 
+# Enforce Git Flow: block direct commits to protected branches
 if [ "$BRANCH" = "main" ] || [ "$BRANCH" = "develop" ]; then
   echo "❌ ERROR: You are on '$BRANCH' — direct commits are not allowed."
   echo "➡️  Use Git Flow: create a 'feature/' or 'release/' branch."
   exit 1
 fi
+
+# If we reach here, commit is allowed
+# exit 0
