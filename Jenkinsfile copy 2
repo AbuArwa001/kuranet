@@ -237,3 +237,60 @@ pipeline {
         }
     }
 }
+        // stage('Deploy to Production') {
+        //     agent any
+        //     steps {
+        //         sshagent(credentials: [SSH_CREDENTIALS_ID]) {
+        //             withCredentials([string(credentialsId: 'django-secret-key', variable: 'SECRET_KEY')]) {
+        //                 retry(3) {
+        //                     sh """
+        //                         for IP in ${WEB1_IP}, ${WEB2_IP}; do
+        //                             ssh -o StrictHostKeyChecking=no ubuntu@\${IP} "
+        //                                 # First configure passwordless sudo for deployment
+                                        
+        //                                 cd ${APP_DIR} || exit 1
+                                        
+        //                                 # Reset repository state
+        //                                 git reset --hard HEAD || exit 1
+                                        
+        //                                 # Clean static files using passwordless sudo
+        //                                 sudo /bin/rm -rf ${APP_DIR}/static/ || true
+        //                                 sudo /bin/rm -rf ${APP_DIR}/staticfiles/ || true
+        //                                 mkdir -p staticfiles || true
+        //                                 mkdir -p static || true
+                                        
+        //                                 # Pull updates safely
+        //                                 git fetch origin main || exit 1
+        //                                 git checkout main || exit 1
+        //                                 git reset --hard origin/main || exit 1
+                                        
+        //                                 # Recreate .env if needed
+        //                                 # [ -f ~/.env ] && cp ~/.env . || true
+                                        
+        //                                 # Reinstall dependencies
+        //                                 source ${VENV_PATH}/bin/activate
+        //                                 pip install -U pip || true
+        //                                 pip install -r requirements.txt || exit 1
+                                        
+        //                                 # Django operations
+        //                                 python manage.py makemigrations users polls || exit 1
+        //                                 python manage.py migrate --noinput || exit 1
+                                        
+        //                                 # Collect static with correct permissions
+        //                                 python manage.py collectstatic --noinput || true
+        //                                 sudo chown -R www-data:www-data static/ || true
+        //                                 sudo chown -R www-data:www-data staticfiles/ || true
+                                        
+        //                                 # Restart services using passwordless sudo
+        //                                 sudo systemctl restart gunicorn || exit 1
+        //                                 echo \"Deployed commit: \$(git rev-parse --short HEAD)\"
+        //                             " || {
+        //                                 echo "Failed on \${IP}"; exit 1
+        //                             }
+        //                         done
+        //                     """
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
