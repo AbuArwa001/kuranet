@@ -104,7 +104,7 @@ pipeline {
                     withCredentials([string(credentialsId: 'django-secret-key', variable: 'SECRET_KEY')]) {
                         retry(3) {
                             sh """
-                                for IP in ${WEB1_IP}; do
+                                for IP in ${WEB1_IP}, ${WEB2_IP}; do
                                     ssh -o StrictHostKeyChecking=no ubuntu@\${IP} "
                                         # First configure passwordless sudo for deployment
                                         
@@ -125,7 +125,7 @@ pipeline {
                                         git reset --hard origin/main || exit 1
                                         
                                         # Recreate .env if needed
-                                        [ -f ~/.env ] && cp ~/.env . || true
+                                        # [ -f ~/.env ] && cp ~/.env . || true
                                         
                                         # Reinstall dependencies
                                         source ${VENV_PATH}/bin/activate
