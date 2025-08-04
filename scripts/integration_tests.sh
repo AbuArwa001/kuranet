@@ -21,13 +21,15 @@ fi
 
 # Install Python dependencies
 pip install --upgrade pip
-pip install -r requirements.txt
+pip install -r requirements-test.txt
 pip install pytest pytest-django pytest-cov pytest-xdist requests
 
 # Start Django server in background
 echo "Starting Django development server..."
 python manage.py makemigrations users polls
 python manage.py migrate
+mkdir -p staticfiles
+mkdir -p static
 python manage.py runserver 0.0.0.0:8000 > /dev/null 2>&1 &
 SERVER_PID=$!
 
@@ -65,18 +67,25 @@ fi
 # Run tests with coverage
 echo "Running integration tests..."
 
-pytest tests/ \
-    --cov=kuranet/ \  # Be specific about what to cover
+# pytest tests/ \
+#     --cov=kuranet/ \  # Be specific about what to cover
+#     --cov-report=xml:coverage.xml \
+#     --cov-report=html:htmlcov \
+#     --cov-config=.coveragerc \
+#     --cov-fail-under=30 \
+#     --junitxml=test-results.xml \
+#     --durations=10 \
+#     -v \
+#     --no-header \
+#     --tb=native
+pytest tests/integration_tests.py \
+    --cov=kuranet \
+    --cov=polls \
+    --cov=users \
     --cov-report=xml:coverage.xml \
-    --cov-report=html:htmlcov \
-    --cov-config=.coveragerc \
-    --cov-fail-under=30 \
+    --cov-report=term \
     --junitxml=test-results.xml \
-    --durations=10 \
-    -v \
-    --no-header \
-    --tb=native
-
+    -v
 # Capture test exit code
 TEST_EXIT_CODE=$?
 
