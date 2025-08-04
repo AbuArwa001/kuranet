@@ -166,36 +166,12 @@ pipeline {
         always {
             script {
                 node {
-                    // Archive all test and security reports
-                    junit testResults: '**/test-results.xml', allowEmptyResults: true, skipMarkingBuildUnstable: true
-                    archiveArtifacts artifacts: '''
-                        **/test-results.xml,
-                        coverage.xml,
-                        htmlcov/**,
-                        bandit-report.xml,
-                        safety-report.json,
-                        pylint-report.txt
-                    ''', allowEmptyArchive: true
+                    // Archive reports (no cleanup)
+                    junit testResults: '**/test-results.xml', allowEmptyResults: true
+                    archiveArtifacts artifacts: 'bandit-report.xml, safety-report.json, pylint-report.txt', allowEmptyArchive: true
                     
-                    // Generate additional reports if missing
-                    sh 'bandit -r kuranet/ -ll -f xml -o bandit-report.xml || true'
-                    sh 'safety check --full-report -o safety-report.json || true'
-                    sh 'pylint kuranet/ polls/ users/ --exit-zero > pylint-report.txt || true'
-                    
-                    // Clean workspace while preserving needed files
-                    cleanWs(
-                        cleanWhenAborted: true,
-                        cleanWhenFailure: true,
-                        cleanWhenNotBuilt: true,
-                        cleanWhenUnstable: true,
-                        deleteDirs: true,
-                        notFailBuild: true,
-                        patterns: [
-                            [pattern: '.venv/', type: 'EXCLUDE'],
-                            [pattern: 'static/', type: 'EXCLUDE'],
-                            [pattern: 'staticfiles/', type: 'EXCLUDE']
-                        ]
-                    )
+                    // Skip cleanWs entirely (remove or disable it)
+                    // cleanWs(deleteDirs: false)  // Optional: Minimal cleanup if needed
                 }
             }
         }
