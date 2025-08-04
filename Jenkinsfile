@@ -1,5 +1,5 @@
 pipeline {
-    agent none
+    agent any
     
     environment {
         REPO = "https://github.com/AbuArwa001/kuranet.git"
@@ -178,56 +178,62 @@ pipeline {
         
         success {
             script {
-                withCredentials([string(credentialsId: 'discord-webhook-url', variable: 'DISCORD_WEBHOOK_URL')]) {
-                    def commit = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
-                    def coverage = sh(script: 'grep -oP "(?<=<pc_cov>)[0-9.]+" coverage.xml || echo "N/A"', returnStdout: true).trim()
-                    
-                    discordSend(
-                        description: "✅ Deployment Successful: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                        link: env.BUILD_URL,
-                        result: currentBuild.result,
-                        webhookURL: "${DISCORD_WEBHOOK_URL}",
-                        title: "Deployed commit: ${commit}",
-                        footer: "Test coverage: ${coverage}%",
-                        color: "65280" // Green
-                    )
+                node {
+                    withCredentials([string(credentialsId: 'discord-webhook-url', variable: 'DISCORD_WEBHOOK_URL')]) {
+                        def commit = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+                        def coverage = sh(script: 'grep -oP "(?<=<pc_cov>)[0-9.]+" coverage.xml || echo "N/A"', returnStdout: true).trim()
+                        
+                        discordSend(
+                            description: "✅ Deployment Successful: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                            link: env.BUILD_URL,
+                            result: currentBuild.result,
+                            webhookURL: "${DISCORD_WEBHOOK_URL}",
+                            title: "Deployed commit: ${commit}",
+                            footer: "Test coverage: ${coverage}%",
+                            color: "65280" // Green
+                        )
+                    }
                 }
             }
         }
         
         failure {
             script {
-                withCredentials([string(credentialsId: 'discord-webhook-url', variable: 'DISCORD_WEBHOOK_URL')]) {
-                    discordSend(
-                        description: "❌ Deployment Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                        link: env.BUILD_URL,
-                        result: currentBuild.result,
-                        webhookURL: "${DISCORD_WEBHOOK_URL}",
-                        title: "Failed commit: ${sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()}",
-                        color: "16711680" // Red
-                    )
+                node {
+                    withCredentials([string(credentialsId: 'discord-webhook-url', variable: 'DISCORD_WEBHOOK_URL')]) {
+                        discordSend(
+                            description: "❌ Deployment Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                            link: env.BUILD_URL,
+                            result: currentBuild.result,
+                            webhookURL: "${DISCORD_WEBHOOK_URL}",
+                            title: "Failed commit: ${sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()}",
+                            color: "16711680" // Red
+                        )
+                    }
                 }
             }
         }
         
         unstable {
             script {
-                withCredentials([string(credentialsId: 'discord-webhook-url', variable: 'DISCORD_WEBHOOK_URL')]) {
-                    def issues = sh(script: '''
-                        echo "Bandit: $(grep -c "<issue" bandit-report.xml || echo 0)"
-                        echo "Safety: $(jq length safety-report.json || echo 0)"
-                        echo "Pylint: $(grep -c ": [CRWEF]" pylint-report.txt || echo 0)"
-                    ''', returnStdout: true).trim()
-                    
-                    discordSend(
-                        description: "⚠️ Deployment Unstable: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                        link: env.BUILD_URL,
-                        result: currentBuild.result,
-                        webhookURL: "${DISCORD_WEBHOOK_URL}",
-                        title: "Unstable issues detected",
-                        footer: "${issues}",
-                        color: "16753920" // Orange
-                    )
+                node {
+                    withCredentials([string(credentialsId: 'discord-webhook-url', variable: 'DISCORD_WEBHOOK_URL')]) {
+                        def issues = sh(script: '''
+                            echo "Bandit: $(grep -c "<issue" bandit-report.xml || echo 0)"
+                            echo "Safety: $(jq length safety-report.json || echo 0)"
+                            echo "Pylint: $(grep -c ": [CRWEF]" pylint-report.txt || echo 0)"
+                        ''', returnStdout: true).trim()
+                        
+                        discordSend(
+                            description: "⚠️ Deployment Unstable: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                            link: env.BUILD_URL,
+                            result: currentBuild.result,
+                            webhookURL: "${DISCORD_WEBHOOK_URL}",
+                            title: "Unstable issues detected",
+                            footer: "${issues}",
+                            color: "16753920" // Orange
+                        )
+                    }
                 }
             }
         }
