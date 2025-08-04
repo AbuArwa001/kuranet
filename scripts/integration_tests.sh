@@ -1,16 +1,43 @@
 #!/bin/bash
+# Integration Test Runner for Kuranet Project
+#
+# This script sets up a complete test environment, runs Django with a test database,
+# and executes integration tests with coverage reporting.
+#
+# Usage: ./script_name.sh
+# Requirements: Python 3.x, pip, requirements-test.txt
+#
+# Environment Variables:
+#   VENV_PATH - Path to virtual environment (default: ~/kuranet/.venv)
+#   TEST_BASE_URL - Base URL for testing (default: http://localhost:8000)
+#   MAX_WAIT_SECONDS - Server startup timeout (default: 30)
+#
+# Outputs:
+#   - coverage.xml: XML coverage report
+#   - test-results.xml: JUnit test results
+#   - htmlcov/: HTML coverage report (if uncommented)
+
 set -e  # Exit immediately if any command fails
 
-# Configuration
+# =============================================================================
+# CONFIGURATION
+# =============================================================================
 VENV_PATH=~/kuranet/.venv
 TEST_BASE_URL="http://localhost:8000"
 MAX_WAIT_SECONDS=30
 RETRY_INTERVAL=2
 
+# =============================================================================
+# ENVIRONMENT SETUP
+# =============================================================================
+
 # Setup environment
 python -m venv $VENV_PATH
 source $VENV_PATH/bin/activate
 
+# =============================================================================
+# DEPENDENCY INSTALLATION
+# =============================================================================
 # Install system dependencies (including curl if needed)
 if ! command -v curl &> /dev/null; then
     echo "Installing curl..."
@@ -24,16 +51,23 @@ pip install --upgrade pip
 pip install -r requirements-test.txt
 pip install pytest pytest-django pytest-cov pytest-xdist requests
 
-# Start Django server in background
+# =============================================================================
+# DJANGO SETUP AND SERVER START
+# =============================================================================
 echo "Starting Django development server..."
 python manage.py makemigrations users polls
 python manage.py migrate
+
+# Create required directories for static files
 mkdir -p staticfiles
 mkdir -p static
 python manage.py runserver 0.0.0.0:8000 > /dev/null 2>&1 &
 SERVER_PID=$!
 
-# Function to check server status using Python requests as fallback
+
+# =============================================================================
+# SERVER HEALTH CHECK
+# =============================================================================
 check_server() {
     # Try curl first if available
     if command -v curl &> /dev/null; then
@@ -64,8 +98,11 @@ if [ $attempt -eq $((MAX_WAIT_SECONDS/RETRY_INTERVAL)) ]; then
     exit 1
 fi
 
-# Run tests with coverage
+# =============================================================================
+# TEST EXECUTION
+# =============================================================================
 echo "Running integration tests..."
+# Note: Comprehensive pytest options commented out for reference
 
 # pytest tests/ \
 #     --cov=kuranet/ \  # Be specific about what to cover
@@ -89,7 +126,10 @@ pytest tests/integration_tests.py \
 # Capture test exit code
 TEST_EXIT_CODE=$?
 
-# Clean up
+# =============================================================================
+# CLEANUP
+# =============================================================================
+
 echo "Stopping Django server..."
 kill $SERVER_PID
 wait $SERVER_PID 2>/dev/null

@@ -30,14 +30,22 @@ SchemaView = get_schema_view(
 )
 
 urlpatterns = [
+    # Root redirect
     path("", RedirectView.as_view(url="/api/v1/", permanent=False)),
+
+    # Admin interface
     path("admin/", admin.site.urls),
+
+    # API endpoints
     path("api/v1/", include("polls.urls")),
     path("api/v1/", include("users.urls")),
+
+    # JWT authentication
     path("api/v1/auth/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path(
         "api/v1/auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"
     ),
+    
     # Swagger and ReDoc endpoints
     re_path(
         r"^swagger(?P<format>\.json|\.yaml)$",
