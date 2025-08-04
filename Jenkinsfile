@@ -103,52 +103,57 @@ pipeline {
                 sshagent(credentials: [SSH_CREDENTIALS_ID]) {
                     withCredentials([string(credentialsId: 'django-secret-key', variable: 'SECRET_KEY')]) {
                         retry(3) {
-                            sh """
-                                for IP in ${WEB1_IP}, ${WEB2_IP}; do
-                                    ssh -o StrictHostKeyChecking=no ubuntu@\${IP} "
-                                        # First configure passwordless sudo for deployment
-                                        
-                                        cd ${APP_DIR} || exit 1
-                                        
-                                        # Reset repository state
-                                        git reset --hard HEAD || exit 1
-                                        
-                                        # Clean static files using passwordless sudo
-                                        sudo /bin/rm -rf ${APP_DIR}/static/ || true
-                                        sudo /bin/rm -rf ${APP_DIR}/staticfiles/ || true
-                                        mkdir -p staticfiles || true
-                                        mkdir -p static || true
-                                        
-                                        # Pull updates safely
-                                        git fetch origin main || exit 1
-                                        git checkout main || exit 1
-                                        git reset --hard origin/main || exit 1
-                                        
-                                        # Recreate .env if needed
-                                        # [ -f ~/.env ] && cp ~/.env . || true
-                                        
-                                        # Reinstall dependencies
-                                        source ${VENV_PATH}/bin/activate
-                                        pip install -U pip || true
-                                        pip install -r requirements.txt || exit 1
-                                        
-                                        # Django operations
-                                        python manage.py makemigrations users polls || exit 1
-                                        python manage.py migrate --noinput || exit 1
-                                        
-                                        # Collect static with correct permissions
-                                        python manage.py collectstatic --noinput || true
-                                        sudo chown -R www-data:www-data static/ || true
-                                        sudo chown -R www-data:www-data staticfiles/ || true
-                                        
-                                        # Restart services using passwordless sudo
-                                        sudo systemctl restart gunicorn || exit 1
-                                        echo \"Deployed commit: \$(git rev-parse --short HEAD)\"
-                                    " || {
-                                        echo "Failed on \${IP}"; exit 1
-                                    }
-                                done
-                            """
+                            script {
+                                // Correct iteration: IPs should be space-separated
+                                def web_ips = "${WEB1_IP} ${WEB2_IP}".split(' ')
+                                for (ip in web_ips) {
+                                    echo "Deploying to ${ip}..."
+                                    sh """
+                                        ssh -o StrictHostKeyChecking=no ubuntu@${ip} "
+                                            # First configure passwordless sudo for deployment
+                                            # (This comment refers to a manual step or a separate configuration task.
+                                            # This script does not configure passwordless sudo itself.)
+
+                                            # Navigate to the application directory
+                                            cd ${APP_DIR} || { echo "ERROR: Could not change to directory ${APP_DIR}. Exiting."; exit 1; }
+
+                                            # Reset repository state
+                                            git reset --hard HEAD || { echo "ERROR: Git reset failed. Exiting."; exit 1; }
+
+                                            # Clean static files using passwordless sudo
+                                            sudo /bin/rm -rf ${APP_DIR}/static/ || true
+                                            sudo /bin/rm -rf ${APP_DIR}/staticfiles/ || true
+                                            mkdir -p staticfiles || true
+                                            mkdir -p static || true
+
+                                            # Pull updates safely
+                                            git fetch origin main || { echo "ERROR: Git fetch failed. Exiting."; exit 1; }
+                                            git checkout main || { echo "ERROR: Git checkout failed. Exiting."; exit 1; }
+                                            git reset --hard origin/main || { echo "ERROR: Git reset hard failed. Exiting."; exit 1; }
+
+                                            # Reinstall dependencies
+                                            source ${VENV_PATH}/bin/activate || { echo "ERROR: Could not activate virtual environment. Exiting."; exit 1; }
+                                            pip install -U pip || true # Allow pip upgrade to fail gracefully
+                                            pip install -r requirements.txt || { echo "ERROR: Pip install failed. Exiting."; exit 1; }
+
+                                            # Django operations
+                                            python3 manage.py makemigrations users polls || { echo "ERROR: Makemigrations failed. Exiting."; exit 1; }
+                                            python3 manage.py migrate --noinput || { echo "ERROR: Migrate failed. Exiting."; exit 1; }
+
+                                            # Collect static with correct permissions
+                                            python3 manage.py collectstatic --noinput || true
+                                            sudo chown -R www-data:www-data static/ || true
+                                            sudo chown -R www-data:www-data staticfiles/ || true
+
+                                            # Restart services using passwordless sudo
+                                            sudo systemctl restart gunicorn || { echo "ERROR: Gunicorn restart failed. Exiting."; exit 1; }
+                                            echo "Deployed commit: \$(git rev-parse --short HEAD)"
+                                        " || {
+                                            echo "Deployment failed on ${ip}"; exit 1
+                                        }
+                                    """
+                                }
+                            }
                         }
                     }
                 }
