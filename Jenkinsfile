@@ -204,7 +204,7 @@ pipeline {
                             description: "❌ Deployment Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                             link: env.BUILD_URL,
                             result: currentBuild.result,
-                            webhookURL: env.DISCORD_WEBHOOK_URL,,
+                            webhookURL: env.DISCORD_WEBHOOK_URL,
                             title: "Failed commit: ${sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()}",
                             footer: "Check the build logs for details.",
                         ).setColor("16711680") // Red
