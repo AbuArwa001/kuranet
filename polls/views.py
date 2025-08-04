@@ -9,7 +9,6 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 
-
 class PollViewSet(ModelViewSet):
     queryset = Poll.objects.all()
     serializer_class = PollSerializer
@@ -17,4 +16,3 @@ class PollViewSet(ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
-
