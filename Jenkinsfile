@@ -156,27 +156,37 @@ pipeline {
         }
         // CD PHASE END
     }
-    
+
     post {
         always {
             script {
-                // Wrap in node context since we're using agent none at top level
                 node {
-                    junit '**/test-results.xml'
+                    // Archive test results and artifacts even if build fails
+                    junit '**/test-results.xml' 
                     archiveArtifacts artifacts: '**/*-report.txt,**/test-results.xml', allowEmptyArchive: true
+                    
+                    // Clean up workspace to prevent disk space issues
+                    cleanWs()
                 }
             }
         }
         success {
             script {
-                withCredentials([string(credentialsId: 'discord-webhook-url', variable: 'DISCORD_WEBHOOK_URL')]) {
-                    discordSend(
-                        description: "Deployment Successful: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                        link: env.BUILD_URL,
-                        imageURL: "${env.BUILD_URL}/artifact/static/logo.png",
-                        footer: "Deployed by Jenkins",
-                        webhookURL: "${DISCORD_WEBHOOK_URL}"
-                    )
+                // Only send success notification if all previous stages succeeded
+                if (currentBuild.result == 'SUCCESS') {
+                    withCredentials([string(credentialsId: 'discord-webhook-url', variable: 'DISCORD_WEBHOOK_URL')]) {
+                        discordSend(
+                            description: "Deployment Successful: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                            link: env.BUILD_URL,
+                            message: "Successfully deployed commit: ${sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()}",
+                            footer: "Deployed by Jenkins at ${new Date().format('yyyy-MM-dd HH:mm:ss')}",
+                            color: '65280', // Green
+                            title: "✅ Deployment Success",
+                            titleLink: env.BUILD_URL,
+                            thumbnail: "${env.BUILD_URL}/artifact/static/logo.png",
+                            webhookURL: "${DISCORD_WEBHOOK_URL}"
+                        )
+                    }
                 }
             }
         }
@@ -184,10 +194,31 @@ pipeline {
             script {
                 withCredentials([string(credentialsId: 'discord-webhook-url', variable: 'DISCORD_WEBHOOK_URL')]) {
                     discordSend(
-                        description: "Build Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                        description: "Deployment Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                         link: env.BUILD_URL,
-                        imageURL: "${env.BUILD_URL}/artifact/static/logo.png",
-                        footer: "Deployment failed",
+                        message: "Failed to deploy commit: ${sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()}",
+                        footer: "Failed at ${new Date().format('yyyy-MM-dd HH:mm:ss')}",
+                        color: '16711680', // Red
+                        title: "❌ Deployment Failure",
+                        titleLink: env.BUILD_URL,
+                        thumbnail: "${env.BUILD_URL}/artifact/static/logo.png",
+                        webhookURL: "${DISCORD_WEBHOOK_URL}"
+                    )
+                }
+            }
+        }
+        unstable {
+            script {
+                withCredentials([string(credentialsId: 'discord-webhook-url', variable: 'DISCORD_WEBHOOK_URL')]) {
+                    discordSend(
+                        description: "Deployment Unstable: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                        link: env.BUILD_URL,
+                        message: "Deployment completed with warnings for commit: ${sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()}",
+                        footer: "Completed at ${new Date().format('yyyy-MM-dd HH:mm:ss')}",
+                        color: '16753920', // Orange
+                        title: "⚠️ Deployment Unstable",
+                        titleLink: env.BUILD_URL,
+                        thumbnail: "${env.BUILD_URL}/artifact/static/logo.png",
                         webhookURL: "${DISCORD_WEBHOOK_URL}"
                     )
                 }
