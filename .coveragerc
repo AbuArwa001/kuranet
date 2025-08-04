@@ -1,15 +1,17 @@
 [run]
-source = .
+source = kuranet
 omit = 
-    */migrations/*
     */tests/*
+    */migrations/*
+    */__init__.py
     */admin.py
     */apps.py
-    manage.py
+    */urls.py
 
 [report]
 exclude_lines =
     pragma: no cover
-    def __str__
+    def __repr__
     raise NotImplementedError
     if __name__ == .__main__.:
+    pass
