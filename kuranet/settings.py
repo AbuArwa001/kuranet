@@ -37,6 +37,8 @@ ALLOWED_HOSTS = [
     "172.234.252.70",
     "172.234.253.249",
     "54.159.93.85",
+    "http://liwomasjid.co.ke",
+    "https://liwomasjid.co.ke",
     "liwomasjid.co.ke",
     "www.liwomasjid.co.ke",
     # *os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost').split(','),
