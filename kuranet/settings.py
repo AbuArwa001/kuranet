@@ -37,11 +37,8 @@ ALLOWED_HOSTS = [
     "172.234.252.70",
     "172.234.253.249",
     "54.159.93.85",
-    "http://liwomasjid.co.ke",
-    "https://liwomasjid.co.ke",
     "liwomasjid.co.ke",
     "www.liwomasjid.co.ke",
-    # *os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost').split(','),
 ]
 
 
@@ -67,12 +64,26 @@ INSTALLED_APPS = [
     'corsheaders',
 ]
 
+# MIDDLEWARE = [
+#     'corsheaders.middleware.CorsMiddleware',
+#     "django.middleware.security.SecurityMiddleware",
+#     "django.contrib.sessions.middleware.SessionMiddleware",
+#     "django.middleware.common.CommonMiddleware",
+#     "django.middleware.csrf.CsrfViewMiddleware",
+#     "django.contrib.auth.middleware.AuthenticationMiddleware",
+#     "django.contrib.messages.middleware.MessageMiddleware",
+#     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+# ]
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "corsheaders.middleware.CorsMiddleware",  # Place early
     "django.middleware.common.CommonMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
+
+    # ⚠️ Only include ONE CSRF middleware
+    "middleware.DisableCSRFCheckMiddleware",  # Custom middleware (must come before CsrfViewMiddleware if used)
+    # "django.middleware.csrf.CsrfViewMiddleware",  # Comment this if you're disabling CSRF
+
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -214,3 +225,10 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_SSL_REDIRECT = False  # Optional: Force HTTPS
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
+CSRF_TRUSTED_ORIGINS = [
+    "http://liwomasjid.co.ke",
+    "https://liwomasjid.co.ke",
+]
+
+# Use this for development only!
+CORS_ALLOW_ALL_ORIGINS = True
