@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from .models import Poll, PollOption, Vote
 from users.models import User
 from .serializers import PollSerializer, PollOptionSerializer, VoteSerializer
-from .permissions import IsOwnerOrAdmin, IsCreator, IsPollOwnerOrAdmin
+from .permissions import IsOwnerOrAdmin, IsCreator, IsPollOwnerOrAdmin, AllowAny
 
 
 class ApiRootView(viewsets.ViewSet):
@@ -27,10 +27,13 @@ class PollViewSet(viewsets.ModelViewSet):
     serializer_class = PollSerializer
     
     def get_permissions(self):
-        if self.action in ['create']:
-            print(f"Creating a poll isAuthenticated ${IsAuthenticated}")
+
+        if  self.action in ['list', 'retrieve']:
+            permission_classes = [AllowAny]
+        elif self.action in ['create']:
+            # print(f"Creating a poll isAuthenticated ${IsAuthenticated}")
             # permission_classes = [IsAuthenticated, IsCreator]
-            permission_classes = [IsAuthenticated]
+            permission_classes = [IsAuthenticated,]
         elif self.action in ['update', 'partial_update', 'destroy']:
             permission_classes = [IsAuthenticated, IsOwnerOrAdmin]
         else:
