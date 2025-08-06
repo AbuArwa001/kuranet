@@ -104,8 +104,8 @@ class TestVoteSerializer:
     def test_deserialization_valid(self, create_poll_option, create_test_user):
         """Test Vote deserialization with valid data."""
         data = {
-            # 'option': create_poll_option.id,
-            'user': create_test_user.id # In a real scenario, user would be from request.user
+            'option': create_poll_option.id,
+            'user_id': create_test_user.id
         }
         serializer = VoteSerializer(data=data)
         assert serializer.is_valid(raise_exception=True)
@@ -117,7 +117,7 @@ class TestVoteSerializer:
         serializer = VoteSerializer(data=data)
         assert not serializer.is_valid()
         assert 'option' in serializer.errors
-        assert 'user' in serializer.errors
+        assert 'user_id' in serializer.errors
 
 @pytest.mark.django_db
 class TestPollSerializer:

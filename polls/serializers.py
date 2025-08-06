@@ -1,4 +1,6 @@
 from rest_framework import serializers
+
+from users.models import User
 from .models import Poll, PollOption, Vote
 from users.serializers import UserSerializer
 from django.utils import timezone
@@ -15,14 +17,27 @@ class PollOptionSerializer(serializers.ModelSerializer):
         # Assuming Vote model has a ForeignKey to PollOption
         return obj.vote_set.count()  
 
+# class VoteSerializer(serializers.ModelSerializer):
+#     user = UserSerializer()
+    
+#     class Meta:
+#         model = Vote
+#         fields = ['id', 'user', 'voted_at']
+
 class VoteSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
+    user_id = serializers.PrimaryKeyRelatedField(
+        source='user',
+        queryset=User.objects.all(),
+        write_only=True
+    )
     
     class Meta:
         model = Vote
-        fields = ['id', 'user', 'voted_at']
+        fields = ['id', 'user', 'user_id', 'option', 'voted_at']
+        read_only_fields = ['id', 'voted_at', 'user']
 
-# class PollSerializer(serializers.ModelSerializer):
+# # class PollSerializer(serializers.ModelSerializer):
 #     options = PollOptionSerializer(many=True)
 #     user = UserSerializer(read_only=True)
 #     votes = VoteSerializer(many=True, read_only=True)
