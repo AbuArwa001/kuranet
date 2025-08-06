@@ -26,11 +26,11 @@ class UserSerializer(serializers.ModelSerializer):
             last_name=validated_data.get('last_name', '')
         )
         return user
-    def list(self):
-        """
-        List all users with their roles.
-        """
-        return User.objects.all()
+    # def list(self):
+    #     """
+    #     List all users with their roles.
+    #     """
+    #     return User.objects.all()
 
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
