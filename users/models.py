@@ -22,7 +22,18 @@ class UserManager(BaseUserManager):
 
         return self.create_user(username, password, **extra_fields)
 
+class Role(models.Model):
+    ROLE_CHOICES = [
+        ('admin', 'Admin'),
+        ('creator', 'Creator'),
+        ('user', 'User'),
+    ]
+    
+    name = models.CharField(max_length=20, choices=ROLE_CHOICES, unique=True)
+    description = models.TextField(blank=True)
 
+    def __str__(self):
+        return self.get_name_display()
 class User(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(max_length=150, unique=True)
     first_name = models.CharField(max_length=30, blank=True)
@@ -33,7 +44,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
 
     objects = UserManager()
-
+    roles = models.ManyToManyField(Role, blank=True, related_name="users")
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS = ["email"]
 
@@ -43,3 +54,4 @@ class User(AbstractBaseUser, PermissionsMixin):
     class Meta:
         verbose_name = "User"
         verbose_name_plural = "Users"
+

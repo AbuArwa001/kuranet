@@ -30,10 +30,14 @@ SchemaView = get_schema_view(
 )
 
 urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('api/v1/', include([
+        # show all Urls available
+
+        path('', include('polls.urls')),
+        path('', include('users.urls')),
+    ])),
     path("", RedirectView.as_view(url="/api/v1/", permanent=False)),
-    path("admin/", admin.site.urls),
-    path("api/v1/", include("polls.urls")),
-    path("api/v1/", include("users.urls")),
     path("api/v1/auth/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path(
         "api/v1/auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"
@@ -49,5 +53,5 @@ urlpatterns = [
         SchemaView.with_ui("swagger", cache_timeout=0),
         name="schema-swagger-ui",
     ),
-    path("redoc/", SchemaView.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
+    path("api/docs/", SchemaView.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
 ]
