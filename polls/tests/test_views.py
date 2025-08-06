@@ -10,16 +10,16 @@ from django.utils import timezone
 
 class PollViewTests(APITestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username="testuser", password="testpass")
+        self.user = User.objects.create_user(username="testuser", password="testpass", email="testuser@example.com")
         self.obj = Poll.objects.create(
             title="Test Poll?",
-            created_by=self.user,
-            expires_at=timezone.now() + timezone.timedelta(days=1),  # required field
+            user=self.user,
+            closes_at=timezone.now() + timezone.timedelta(days=1),
         )
 
     def test_list_view(self):
-        url = reverse("poll-list")  # DRF router URL
+        url = reverse("poll-list") 
         response = self.client.get(url)
-        print(response.data.get("results", [])[0])
+        # print(response.data.get("results", [])[0])
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data.get("results", [])[0]["title"], "Test Poll?")

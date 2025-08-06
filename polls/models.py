@@ -1,6 +1,7 @@
 # polls/models.py
 from django.db import models
 from users.models import User
+from django.utils import timezone
 
 class Poll(models.Model):
     STATUS_CHOICES = [
@@ -15,7 +16,10 @@ class Poll(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     closes_at = models.DateTimeField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
-
+    def save(self, *args, **kwargs):
+        if self.closes_at < timezone.now():
+            self.status = 'closed'
+        super().save(*args, **kwargs)
     def __str__(self):
         return self.title
 
@@ -24,7 +28,7 @@ class PollOption(models.Model):
     text = models.CharField(max_length=255)
 
     def __str__(self):
-        return self.text
+        return f"{self.poll.title} - {self.text}"
 class Vote(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     option = models.ForeignKey(PollOption, on_delete=models.CASCADE)
@@ -35,8 +39,8 @@ class Vote(models.Model):
         unique_together = ('user', 'poll')
 
     def __str__(self):
-        return f"{self.user} -> {self.option}"
-    
+        return f"Vote by {self.user.username} on {self.option.text}"
+
     def save(self, *args, **kwargs):
         # Automatically set the poll from the option when saving
         if not self.poll_id:
