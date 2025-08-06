@@ -1,39 +1,52 @@
 from rest_framework import serializers
-from .models import Poll, Option
+from .models import Poll, PollOption, Vote
+from users.serializers import UserSerializer
 
-
-class OptionSerializer(serializers.ModelSerializer):
+class PollOptionSerializer(serializers.ModelSerializer):
+    vote_count = serializers.SerializerMethodField(read_only=True)
+    
     class Meta:
-        model = Option
-        fields = ["id", "text"]
+        model = PollOption
+        fields = ['id', 'text', 'vote_count']
+    
+    def get_vote_count(self, obj):
+        # return obj.votes.count()
+        # Assuming Vote model has a ForeignKey to PollOption
+        return obj.vote_set.count()  
 
+class VoteSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+    
+    class Meta:
+        model = Vote
+        fields = ['id', 'user', 'voted_at']
 
 class PollSerializer(serializers.ModelSerializer):
-    options = OptionSerializer(many=True)
-    created_by = serializers.ReadOnlyField(source="created_by.username")
-
+    options = PollOptionSerializer(many=True)
+    user = UserSerializer(read_only=True)
+    votes = VoteSerializer(many=True, read_only=True)
+    status = serializers.CharField(read_only=True)
+    
     class Meta:
         model = Poll
         fields = [
-            "id",
-            "title",
-            "description",
-            "created_by",
-            "created_at",
-            "expires_at",
-            "options",
+            'id', 'user', 'title', 'description', 
+            'created_at', 'closes_at', 'status', 
+            'options', 'votes'
         ]
-
-    def validate_expires_at(self, value):
-        from django.utils import timezone
-
-        if value <= timezone.now():
-            raise serializers.ValidationError("Expiration date must be in the future.")
-        return value
-
     def create(self, validated_data):
-        options_data = validated_data.pop("options")
+        # Extract the options data from the validated data
+        options_data = validated_data.pop('options')
+        
+        # Create the Poll instance first
         poll = Poll.objects.create(**validated_data)
+        
+        # Iterate over the options data and create PollOption instances
         for option_data in options_data:
-            Option.objects.create(poll=poll, **option_data)
+            PollOption.objects.create(poll=poll, **option_data)
+            
         return poll
+class PollOptionCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PollOption
+        fields = ['text']

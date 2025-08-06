@@ -1,46 +1,36 @@
 from rest_framework import serializers
-from .models import User
-from rest_framework_simplejwt.tokens import RefreshToken
+from .models import User, Role
 
+class RoleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Role
+        fields = ['id', 'name']
 
 class UserSerializer(serializers.ModelSerializer):
-    """
-    Serializer for User model.
-    This serializer handles the serialization and deserialization of User instances.
-    """
-
+    roles = RoleSerializer(many=True, read_only=True)
+    
     class Meta:
         model = User
-        fields = ["id", "username", "email", "first_name", "last_name", "password"]
-        read_only_fields = ["id"]  # id field is read-only
+        fields = ['id', 'username', 'email', 'first_name', 'last_name','password', 'is_active', 'roles']
         extra_kwargs = {
-            "password": {
-                "write_only": True
-            }  # Password should not be returned in responses
+            'password': {'write_only': True}
         }
 
     def create(self, validated_data):
-        print("Creating user with data test:", validated_data)
-        data = User.objects.create_user(
-            username=validated_data["username"],
-            email=validated_data.get("email", ""),
-            first_name=validated_data.get("first_name", ""),
-            last_name=validated_data.get("last_name", ""),
-            password=validated_data["password"],
+        user = User.objects.create_user(
+            username=validated_data['username'],
+            email=validated_data.get('email', ''),
+            password=validated_data['password'],
+            first_name=validated_data.get('first_name', ''),
+            last_name=validated_data.get('last_name', '')
         )
-        print("User created:", data)
-        return data
+        return user
+    def list(self):
+        """
+        List all users with their roles.
+        """
+        return User.objects.all()
 
-    def to_representation(self, instance):
-        refresh = RefreshToken.for_user(instance)
-        return {
-            "user": {
-                "id": instance.id,
-                "username": instance.username,
-                "email": instance.email,
-                "first_name": instance.first_name,
-                "last_name": instance.last_name,
-            },
-            "refresh": str(refresh),
-            "access": str(refresh.access_token),
-        }
+class LoginSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField(write_only=True)
