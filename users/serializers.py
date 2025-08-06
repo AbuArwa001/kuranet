@@ -7,6 +7,7 @@ class RoleSerializer(serializers.ModelSerializer):
         fields = ['id', 'name']
 
 class UserSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(required=True)
     roles = RoleSerializer(many=True, read_only=True)
     
     class Meta:
