@@ -146,7 +146,7 @@ pipeline {
                                             python3 manage.py migrate --noinput || { echo "ERROR: Migrate failed. Exiting."; exit 1; }
 
                                             # seed data
-                                            python3 manage.py seed || { echo "ERROR: Seed data failed. Exiting."; exit 1; }
+                                            // python3 manage.py seed || { echo "ERROR: Seed data failed. Exiting."; exit 1; }
 
                                             # Collect static with correct permissions
                                             python3 manage.py collectstatic --noinput || true
