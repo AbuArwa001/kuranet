@@ -66,7 +66,7 @@ fi
 
 # Run tests with coverage
 echo "Running integration tests..."
-"$VENV_PATH/bin/pytest" --cov-omit="*/conftest.py,*/polls/management/commands/seed.py,*/polls/permissions.py,*/kuranet/asgi.py,*/kuranet/wsgi.py,*/manage.py"
+pytest
 
 # Capture test exit code
 TEST_EXIT_CODE=$?

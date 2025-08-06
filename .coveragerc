@@ -7,6 +7,12 @@ omit =
     */admin.py
     */apps.py
     */urls.py
+    */conftest.py
+    */polls/management/commands/seed.py
+    */polls/permissions.py
+    */kuranet/asgi.py
+    */kuranet/wsgi.py
+    */manage.py
 
 [report]
 exclude_lines =
