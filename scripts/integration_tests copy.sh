@@ -67,8 +67,25 @@ fi
 # Run tests with coverage
 echo "Running integration tests..."
 
-pytest --cov-omit="*/conftest.py,*/polls/management/commands/seed.py,*/polls/permissions.py,*/kuranet/asgi.py,*/kuranet/wsgi.py,*/manage.py"
-
+# pytest tests/ \
+#     --cov=kuranet/ \  # Be specific about what to cover
+#     --cov-report=xml:coverage.xml \
+#     --cov-report=html:htmlcov \
+#     --cov-config=.coveragerc \
+#     --cov-fail-under=30 \
+#     --junitxml=test-results.xml \
+#     --durations=10 \
+#     -v \
+#     --no-header \
+#     --tb=native
+pytest tests/integration_tests.py \
+    --cov=kuranet \
+    --cov=polls \
+    --cov=users \
+    --cov-report=xml:coverage.xml \
+    --cov-report=term \
+    --junitxml=test-results.xml \
+    -v
 # Capture test exit code
 TEST_EXIT_CODE=$?
 
