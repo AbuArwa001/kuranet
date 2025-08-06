@@ -183,58 +183,70 @@ pipeline {
                 }
             }
         }
-    success {
-        script {
-            withCredentials([string(credentialsId: 'discord-webhook-url', variable: 'DISCORD_WEBHOOK_URL')]) {
-                def commit = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
-                def coverage = sh(script: 'grep -oP "(?<=<pc_cov>)[0-9.]+" coverage.xml || echo "N/A"', returnStdout: true).trim()
-                
-                discordSend(
-                    webhookURL: env.DISCORD_WEBHOOK_URL,
-                    description: "✅ Deployment Successful: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                    link: env.BUILD_URL,
-                    title: "Deployed commit: ${commit}",
-                    footer: "Test coverage: ${coverage}%",
-                    color: "65280"  // Green in decimal
-                )
+        success {
+            script {
+                withCredentials([string(credentialsId: 'discord-webhook-url', variable: 'DISCORD_WEBHOOK_URL')]) {
+                    // Extracting commit hash and test coverage as before
+                    def commit = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+                    def coverage = sh(script: 'grep -oP "(?<=<pc_cov>)[0-9.]+" coverage.xml || echo "N/A"', returnStdout: true).trim()
+                    
+                    discordSend(
+                        webhookURL: env.DISCORD_WEBHOOK_URL,
+                        // --- The key change is here: using the `embeds` list ---
+                        embeds: [[
+                            color: '00ff00', // Hex for green
+                            title: "✅ Deployment Successful: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                            description: "Deployed commit: ${commit}",
+                            fields: [[name: 'Test coverage', value: "${coverage}%"]],
+                            link: env.BUILD_URL,
+                            footer: "Check the build logs for details." // You can customize this footer
+                        ]]
+                    )
+                }
             }
         }
-    }
-    
-    failure {
-        script {
-            withCredentials([string(credentialsId: 'discord-webhook-url', variable: 'DISCORD_WEBHOOK_URL')]) {
-                discordSend(
-                    webhookURL: env.DISCORD_WEBHOOK_URL,
-                    description: "❌ Deployment Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                    link: env.BUILD_URL,
-                    title: "Failed commit: ${sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()}",
-                    footer: "Check the build logs for details.",
-                    color: "16711680"  // Red in decimal
-                )
+        
+        failure {
+            script {
+                withCredentials([string(credentialsId: 'discord-webhook-url', variable: 'DISCORD_WEBHOOK_URL')]) {
+                    discordSend(
+                        webhookURL: env.DISCORD_WEBHOOK_URL,
+                        // --- Using the `embeds` list for the failure message ---
+                        embeds: [[
+                            color: 'ff0000', // Hex for red
+                            title: "❌ Deployment Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                            description: "Failed commit: ${sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()}",
+                            link: env.BUILD_URL,
+                            footer: "Check the build logs for details."
+                        ]]
+                    )
+                }
             }
         }
-    }
-    
-    unstable {
-        script {
-            withCredentials([string(credentialsId: 'discord-webhook-url', variable: 'DISCORD_WEBHOOK_URL')]) {
-                def issues = sh(script: '''
-                    echo "Bandit: $(test -f bandit-report.xml && grep -c "<issue" bandit-report.xml || echo 0)"
-                    echo "Safety: $(test -f safety-report.json && jq length safety-report.json || echo 0)"
-                    echo "Pylint: $(test -f pylint-report.txt && grep -c ": [CRWEF]" pylint-report.txt || echo 0)"
-                ''', returnStdout: true).trim()
-                
-                discordSend(
-                    webhookURL: env.DISCORD_WEBHOOK_URL,
-                    description: "⚠️ Deployment Unstable: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                    link: env.BUILD_URL,
-                    title: "Unstable issues detected",
-                    footer: "${issues}",
-                    color: "16753920"  // Orange in decimal
-                )
+        
+        unstable {
+            script {
+                withCredentials([string(credentialsId: 'discord-webhook-url', variable: 'DISCORD_WEBHOOK_URL')]) {
+                    def issues = sh(script: '''
+                        echo "Bandit: $(test -f bandit-report.xml && grep -c "<issue" bandit-report.xml || echo 0)"
+                        echo "Safety: $(test -f safety-report.json && jq length safety-report.json || echo 0)"
+                        echo "Pylint: $(test -f pylint-report.txt && grep -c ": [CRWEF]" pylint-report.txt || echo 0)"
+                    ''', returnStdout: true).trim()
+                    
+                    discordSend(
+                        webhookURL: env.DISCORD_WEBHOOK_URL,
+                        // --- Using the `embeds` list for the unstable message ---
+                        embeds: [[
+                            color: 'ffa500', // Hex for orange
+                            title: "⚠️ Deployment Unstable: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                            description: "Unstable issues detected",
+                            fields: [[name: 'Details', value: issues]],
+                            link: env.BUILD_URL,
+                            footer: "Check the build logs for details."
+                        ]]
+                    )
+                }
             }
         }
-    }        
     }
 }
