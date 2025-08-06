@@ -131,6 +131,11 @@ pipeline {
                                             git checkout main || { echo "ERROR: Git checkout failed. Exiting."; exit 1; }
                                             git reset --hard origin/main || { echo "ERROR: Git reset hard failed. Exiting."; exit 1; }
 
+                                            # Set correct permissions for the project directory and virtual environment
+                                            # This is crucial to prevent 'Permission denied' errors during pip install
+                                            sudo chown -R ubuntu:ubuntu ${APP_DIR}/ || { echo "ERROR: Failed to set ownership for APP_DIR. Exiting."; exit 1; }
+                                            sudo chown -R ubuntu:ubuntu ${VENV_PATH}/ || { echo "ERROR: Failed to set ownership for VENV_PATH. Exiting."; exit 1; }
+
                                             # Reinstall dependencies
                                             source ${VENV_PATH}/bin/activate || { echo "ERROR: Could not activate virtual environment. Exiting."; exit 1; }
                                             pip install -U pip || true # Allow pip upgrade to fail gracefully
