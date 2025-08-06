@@ -1,5 +1,13 @@
 {
     "cSpell.words": [
-        "VENV"
+        "allauth",
+        "authtoken",
+        "corsheaders",
+        "dotenv",
+        "kuranet",
+        "liwomasjid",
+        "simplejwt",
+        "VENV",
+        "yasg"
     ]
 }

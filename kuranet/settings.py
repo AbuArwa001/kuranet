@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+from datetime import timedelta
 from pathlib import Path
 import os
 from decouple import config
@@ -17,10 +18,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
+LB_DOMAIN = config("AWS_ELB_DOMAIN", default="liwomasjid.co.ke")
+LB_IP = config("LB_IP", default="54.159.93.85")
+WEB_SERVER_01 = config("WEB_SERVER_01", default="172.234.252.70")
+WEB_SERVER_02 = config("WEB_SERVER_02", default="172.234.253.249")
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -32,13 +37,13 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 DEBUG = os.getenv("DJANGO_DEBUG", "False") == "True"
 
 ALLOWED_HOSTS = [
-    "127.0.0.1",
     "localhost",
-    "172.234.252.70",
-    "172.234.253.249",
-    "54.159.93.85",
-    "liwomasjid.co.ke",
-    "www.liwomasjid.co.ke",
+    "127.0.0.1",
+    LB_DOMAIN,
+    LB_IP,
+    WEB_SERVER_01,
+    WEB_SERVER_02,
+    f"www.{LB_DOMAIN}",
 ]
 
 
@@ -64,31 +69,37 @@ INSTALLED_APPS = [
     'corsheaders',
 ]
 
-# MIDDLEWARE = [
-#     'corsheaders.middleware.CorsMiddleware',
-#     "django.middleware.security.SecurityMiddleware",
-#     "django.contrib.sessions.middleware.SessionMiddleware",
-#     "django.middleware.common.CommonMiddleware",
-#     "django.middleware.csrf.CsrfViewMiddleware",
-#     "django.contrib.auth.middleware.AuthenticationMiddleware",
-#     "django.contrib.messages.middleware.MessageMiddleware",
-#     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-# ]
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",  # Place early
     "django.middleware.common.CommonMiddleware",
-
-    # ⚠️ Only include ONE CSRF middleware
-    "middleware.DisableCSRFCheckMiddleware",  # Custom middleware (must come before CsrfViewMiddleware if used)
-    # "django.middleware.csrf.CsrfViewMiddleware",  # Comment this if you're disabling CSRF
-
+    "middleware.DisableCSRFCheckMiddleware",
+    # "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+CSRF_COOKIE_SECURE = True
+CSRF_TRUSTED_ORIGINS = [
+    f"https://{LB_DOMAIN}",
+    f"https://www.{LB_DOMAIN}",
+    f"https://{LB_IP}",
+]
+
+# Use this for development only!
+# CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+    f"https://{LB_DOMAIN}",
+    f"https://www.{LB_DOMAIN}",
+    f"https://{LB_IP}",
+    f"https://{WEB_SERVER_01}",
+    f"https://{WEB_SERVER_02}",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000"
+]
 ROOT_URLCONF = "kuranet.urls"
 
 TEMPLATES = [
@@ -203,7 +214,8 @@ SIMPLE_JWT = {
     "USER_ID_FIELD": "id",
     "USER_ID_CLAIM": "user_id",
     "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
-    "EXPIRATION_DELTA": 60,  # Use default expiration
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "ROTATE_REFRESH_TOKENS": True,
 }
 STATIC_URL = "/static/"
@@ -220,15 +232,11 @@ STATICFILES_DIRS = [
     ),
 ]
 STATICFILES_DIRS = [d for d in STATICFILES_DIRS if d is not None]
-
+# Loadbalancer settings
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_HOST = True
+
+# Security settings
 SECURE_SSL_REDIRECT = False  # Optional: Force HTTPS
 SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
-CSRF_TRUSTED_ORIGINS = [
-    "http://liwomasjid.co.ke",
-    "https://liwomasjid.co.ke",
-]
-
-# Use this for development only!
-CORS_ALLOW_ALL_ORIGINS = True
