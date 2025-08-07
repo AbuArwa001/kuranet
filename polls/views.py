@@ -8,20 +8,20 @@ from .serializers import PollSerializer, PollOptionSerializer, VoteSerializer
 from .permissions import IsOwnerOrAdmin, IsCreator, IsPollOwnerOrAdmin, AllowAny
 
 
-class ApiRootView(viewsets.ViewSet):
-    BASE_NAME = 'API Root'
-    BASE_URL = os.getenv('BASE_URL', 'https://liwomasjid.co.ke/')
-    """
-    API root view to list all available endpoints.
-    """
-    def list(self, request):
-        return Response({
-            'self': f'{self.BASE_URL}api/v1/',
-            'auth': f'{self.BASE_URL}api/v1/auth/',
-            'polls': f'{self.BASE_URL}api/v1/polls/',
-            'poll-options': f'{self.BASE_URL}api/v1/polls/{{poll_id}}/options/',
-            'votes': f'{self.BASE_URL}api/v1/polls/{{poll_id}}/votes/'
-        })
+# class ApiRootView(viewsets.ViewSet):
+#     BASE_NAME = 'API Root'
+#     BASE_URL = os.getenv('BASE_URL', 'https://liwomasjid.co.ke/')
+#     """
+#     API root view to list all available endpoints.
+#     """
+#     def list(self, request):
+#         return Response({
+#             'self': f'{self.BASE_URL}api/v1/',
+#             'auth': f'{self.BASE_URL}api/v1/auth/',
+#             'polls': f'{self.BASE_URL}api/v1/polls/',
+#             'poll-options': f'{self.BASE_URL}api/v1/polls/{{poll_id}}/options/',
+#             'votes': f'{self.BASE_URL}api/v1/polls/{{poll_id}}/votes/'
+#         })
 class PollViewSet(viewsets.ModelViewSet):
     queryset = Poll.objects.all()
     serializer_class = PollSerializer
