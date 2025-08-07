@@ -12,3 +12,10 @@ class IsPollOwnerOrAdmin(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         # For poll options
         return obj.poll.user == request.user or request.user.roles.filter(name='admin').exists()
+    
+class AllowAny(permissions.AllowAny):
+    """
+    Custom permission to allow any user to access the view.
+    This can be used for public endpoints.
+    """
+    pass
