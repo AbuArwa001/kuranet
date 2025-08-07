@@ -56,8 +56,11 @@ class PollOptionViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         # return PollOption.objects.filter(poll_id=self.kwargs['poll_id'])
-        return PollOption.objects.filter(poll_id=self.kwargs['poll_id'])
-    
+        poll_id = self.kwargs.get('id')
+        if not poll_id:
+            return PollOption.objects.none()
+        return PollOption.objects.filter(poll_id=poll_id)
+
     def perform_create(self, serializer):
         poll = Poll.objects.get(id=self.kwargs['poll_id'])
         serializer.save(poll=poll)
