@@ -236,8 +236,8 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.SessionAuthentication",
         "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
@@ -251,7 +251,7 @@ SWAGGER_SETTINGS = {
             "name": "Authorization",
             "in": "header",
             "description": "JWT Authorization header",
-            # "bearerFormat": "JWT",
+            "bearerFormat": "JWT",
         }
     },
     'DEFAULT_INFO': 'kuranet.urls.api_info',  # Reference your API info
@@ -278,12 +278,6 @@ SIMPLE_JWT = {
     'USER_AUTHENTICATION_RULE': 'rest_framework_simplejwt.authentication.default_user_authentication_rule',
 
 }
-# settings.py
-REST_FRAMEWORK = {
-    # ... other settings ...
-    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
-}
-
 SPECTACULAR_SETTINGS = {
     "TITLE": "Your API",
     "VERSION": "v1",

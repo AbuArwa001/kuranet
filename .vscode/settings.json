@@ -6,6 +6,7 @@
         "dotenv",
         "kuranet",
         "liwomasjid",
+        "onrender",
         "simplejwt",
         "VENV",
         "yasg"
