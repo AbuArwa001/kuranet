@@ -12,7 +12,7 @@ class PollOptionSerializer(serializers.ModelSerializer):
         model = PollOption
         fields = ['id', 'text', 'vote_count']
     
-    def get_vote_count(self, obj):
+    def get_vote_count(self, obj) -> int:
         # return obj.votes.count()
         # Assuming Vote model has a ForeignKey to PollOption
         return obj.vote_set.count()  
