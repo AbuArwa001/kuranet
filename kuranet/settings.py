@@ -73,6 +73,7 @@ INSTALLED_APPS = [
     # 'allauth',                   # for registration
     # 'allauth.account',
     # 'dj_rest_auth.registration',
+    "drf_spectacular",
     "drf_yasg",
     "polls",
     "users",
