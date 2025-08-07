@@ -52,6 +52,7 @@ ALLOWED_HOSTS = [
     WEB_SERVER_01,
     WEB_SERVER_02,
     f"www.{LB_DOMAIN}",
+    "kuranet.onrender.com"
 ]
 
 
@@ -97,7 +98,11 @@ CSRF_TRUSTED_ORIGINS = [
     f"https://www.{LB_DOMAIN}",
     f"https://{LB_IP}",
     "http://localhost",
+    "https://kuranet.onrender.com/"
+    "https://kuranet.onrender.com/"
     "http://127.0.0.1"
+    "https://kuranet.onrender.com",
+    "kuranet.onrender.com"
 ]
 
 
