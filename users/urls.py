@@ -13,13 +13,13 @@ urlpatterns = [
     path('auth/login/', TokenObtainPairView.as_view(), name='login'),
     path('auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('auth/logout/', AuthViewSet.as_view({'post': 'logout'}), name='logout'),
-    path('users/', UserViewSet.as_view({
+    path('', UserViewSet.as_view({
         'get': 'list',
     }), name='user-list'),
     
     # path('', include(users_router.urls)),
     # User management endpoints
-    path('users/<int:pk>/', UserViewSet.as_view({
+    path('<int:pk>/', UserViewSet.as_view({
         'get': 'retrieve',
         'put': 'update',
         'patch': 'partial_update',
@@ -27,7 +27,7 @@ urlpatterns = [
     }), name='user-detail'),
     
     # User activation endpoint
-    path('users/<int:pk>/deactivate/', UserViewSet.as_view({
+    path('<int:pk>/deactivate/', UserViewSet.as_view({
         'post': 'deactivate'
     }), name='user-deactivate'),
 ]
