@@ -37,6 +37,12 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 DEBUG = os.getenv("DJANGO_DEBUG", "False") == "True"
 CORS_DEBUG = True
 CORS_ALLOW_CREDENTIALS = True
+CSRF_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_HTTPONLY = True
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
 
 ALLOWED_HOSTS = [
     "localhost",
@@ -90,19 +96,31 @@ CSRF_TRUSTED_ORIGINS = [
     f"https://{LB_DOMAIN}",
     f"https://www.{LB_DOMAIN}",
     f"https://{LB_IP}",
+    "http://localhost",
+    "http://127.0.0.1"
 ]
+
 
 # Use this for development only!
 # CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWED_ORIGINS = [
     f"https://{LB_DOMAIN}",
     f"https://www.{LB_DOMAIN}",
-    f"https://{LB_IP}",
-    f"https://{WEB_SERVER_01}",
-    f"https://{WEB_SERVER_02}",
+    f"http://{LB_DOMAIN}",
+    f"http://www.{LB_DOMAIN}",
     "http://localhost:8000",
-    "http://127.0.0.1:8000"
+    "http://127.0.0.1:8000",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
 ]
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://\w+\.liwomasjid\.co\.ke$",
+    r"^http://\w+\.liwomasjid\.co\.ke$",
+    r"^http://localhost:\d+$",
+    r"^http://127\.0\.0\.1:\d+$",
+]
+
 ROOT_URLCONF = "kuranet.urls"
 
 TEMPLATES = [
@@ -194,7 +212,7 @@ REST_FRAMEWORK = {
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-    "PAGE_SIZE": 10,
+    "PAGE_SIZE": 20,
 }
 # Swagger settings
 SWAGGER_SETTINGS = {
@@ -242,4 +260,50 @@ USE_X_FORWARDED_HOST = True
 
 # Security settings
 SECURE_SSL_REDIRECT = False  # Optional: Force HTTPS
-SESSION_COOKIE_SECURE = True
+
+
+# Email configuration (required for password resets)
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
+EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='webmaster@liwomasjid.co.ke')
+
+# Logging configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'debug.log'),
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}
+
+# Custom user model settings
+AUTH_USER_MODEL = 'users.User'
+LOGIN_URL = '/admin/login/'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
+
+# Session settings
+SESSION_COOKIE_NAME = '__Secure-kuranet-sessionid'
+CSRF_COOKIE_NAME = '__Secure-kuranet-csrftoken'
+
+# Simple JWT additional settings
+SIMPLE_JWT.update({
+    'UPDATE_LAST_LOGIN': True,
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+    'USER_AUTHENTICATION_RULE': 'rest_framework_simplejwt.authentication.default_user_authentication_rule',
+})
