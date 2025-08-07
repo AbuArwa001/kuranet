@@ -245,11 +245,6 @@ SWAGGER_SETTINGS = {
             "description": "JWT Authorization header",
         }
     },
-    'DEFAULT_INFO': 'kuranet.urls.api_info',  # Reference your API info
-    'DEFAULT_API_URL': f'https://{LB_DOMAIN}',
-    'OPERATIONS_SORTER': 'alpha',
-    'TAGS_SORTER': 'alpha',
-    'DEEP_LINKING': True,
 }
 # Simple JWT settings
 SIMPLE_JWT = {
