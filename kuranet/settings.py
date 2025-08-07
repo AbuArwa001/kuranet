@@ -98,11 +98,10 @@ CSRF_TRUSTED_ORIGINS = [
     f"https://www.{LB_DOMAIN}",
     f"https://{LB_IP}",
     "http://localhost",
-    "https://kuranet.onrender.com/"
-    "https://kuranet.onrender.com/"
+    "http://kuranet.onrender.com/",
+    "http://kuranet.onrender.com",
+    "http://localhost:8000",
     "http://127.0.0.1"
-    "https://kuranet.onrender.com",
-    "kuranet.onrender.com"
 ]
 
 
