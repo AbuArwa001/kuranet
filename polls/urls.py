@@ -4,7 +4,7 @@ from .views import PollViewSet, PollOptionViewSet, VoteViewSet, ApiRootView
 
 # Create a router for polls
 polls_router = DefaultRouter()
-polls_router.register(r'polls', PollViewSet, basename='poll')
+polls_router.register(r'', PollViewSet, basename='poll')
 
 urlpatterns = [
     # Poll endpoints: /api/v1/polls/
@@ -13,7 +13,7 @@ urlpatterns = [
 
     # Nested options: /api/v1/polls/<poll_id>/options/
     path(
-        'polls/<int:poll_id>/options/',
+        '<int:poll_id>/options/',
         PollOptionViewSet.as_view({
             'get': 'list',
             'post': 'create'
@@ -23,7 +23,7 @@ urlpatterns = [
     
     # Single option: /api/v1/polls/<poll_id>/options/<id>/
     path(
-        'polls/<int:poll_id>/options/<int:pk>/',
+        '<int:poll_id>/options/<int:pk>/',
         PollOptionViewSet.as_view({
             'get': 'retrieve',
             'put': 'update',
@@ -35,7 +35,7 @@ urlpatterns = [
     
     # Voting endpoints: /api/v1/polls/<poll_id>/votes/
     path(
-        'polls/<int:poll_id>/votes/',
+        '<int:poll_id>/votes/',
         VoteViewSet.as_view({
             'get': 'list',
             'post': 'create'
