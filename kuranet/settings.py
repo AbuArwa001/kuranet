@@ -120,7 +120,25 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^http://localhost:\d+$",
     r"^http://127\.0\.0\.1:\d+$",
 ]
-
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
 ROOT_URLCONF = "kuranet.urls"
 
 TEMPLATES = [
@@ -225,6 +243,7 @@ SWAGGER_SETTINGS = {
             "description": "JWT Authorization header",
         }
     },
+    'JSON_EDITOR': True,
 }
 # Simple JWT settings
 SIMPLE_JWT = {
@@ -238,6 +257,10 @@ SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "ROTATE_REFRESH_TOKENS": True,
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+    'UPDATE_LAST_LOGIN': True,
+    'USER_AUTHENTICATION_RULE': 'rest_framework_simplejwt.authentication.default_user_authentication_rule',
+
 }
 STATIC_URL = "/static/"
 # STATICFILES_DIRS = [
@@ -300,10 +323,3 @@ LOGOUT_REDIRECT_URL = '/'
 # Session settings
 SESSION_COOKIE_NAME = '__Secure-kuranet-sessionid'
 CSRF_COOKIE_NAME = '__Secure-kuranet-csrftoken'
-
-# Simple JWT additional settings
-SIMPLE_JWT.update({
-    'UPDATE_LAST_LOGIN': True,
-    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
-    'USER_AUTHENTICATION_RULE': 'rest_framework_simplejwt.authentication.default_user_authentication_rule',
-})
