@@ -74,7 +74,7 @@ INSTALLED_APPS = [
     # 'allauth.account',
     # 'dj_rest_auth.registration',
     "drf_spectacular",
-    "drf_yasg",
+    # "drf_yasg",
     "polls",
     "users",
 
@@ -279,18 +279,27 @@ SIMPLE_JWT = {
 
 }
 SPECTACULAR_SETTINGS = {
-    "TITLE": "Your API",
+    "TITLE": "KURANET API",
     "VERSION": "v1",
     "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_SPLIT_REQUEST": True,
     "SECURITY_SCHEMES": {
         "Bearer": {
-            "type": "http",
+            "type": ["http","https"],
             "scheme": "bearer",
             "bearerFormat": "JWT",
         }
     },
+    # Add this to auto-add Bearer prefix:
+    "SWAGGER_UI_SETTINGS": {
+        "deepLinking": True,
+        "persistAuthorization": True,
+        "displayRequestDuration": True,
+        "filter": True,
+        "requestSnippetsEnabled": True,
+    }
 }
+
 STATIC_URL = "/static/"
 # STATICFILES_DIRS = [
 #     BASE_DIR / "static",

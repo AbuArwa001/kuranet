@@ -5,26 +5,14 @@ It includes the admin interface and API endpoints.
 """
 
 
-from rest_framework import permissions
-from drf_yasg.views import get_schema_view
-from drf_yasg import openapi
-from django.urls import path, include, re_path
+# kuranet/urls.py
+from django.urls import path, include
 from django.contrib import admin
 from django.views.generic import RedirectView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-schema_view = get_schema_view(
-    openapi.Info(
-        title="Kuranet API",
-        default_version="v1",
-        description="API documentation",
-        terms_of_service="https://liwomasjid.co.ke/terms/",
-        contact=openapi.Contact(email="contact@liwomasjid.co.ke"),
-        license=openapi.License(name="BSD License"),
-    ),
-    public=True,
-    permission_classes=(permissions.AllowAny,),
-)
+# Remove drf_yasg imports and replace with drf_spectacular
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -39,8 +27,11 @@ urlpatterns = [
         ])),
     ])),
     
-    # Documentation
-    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
-    path('api/doc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
+    # Documentation - updated to use drf_spectacular
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('swagger/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('api/doc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+    
+    # Redirect from root to Swagger
     path('', RedirectView.as_view(url='/swagger/', permanent=False)),
 ]
