@@ -18,8 +18,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-
-LB_DOMAIN = config("AWS_ELB_DOMAIN", default="liwomasjid.co.ke")
+# settings.py
+LB_DOMAIN = config("AWS_ELB_DOMAIN", default="liwomasjid.co.ke") # Load Balancer domain
 LB_IP = config("LB_IP", default="54.159.93.85")
 WEB_SERVER_01 = config("WEB_SERVER_01", default="172.234.252.70")
 WEB_SERVER_02 = config("WEB_SERVER_02", default="172.234.253.249")
@@ -35,6 +35,8 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DJANGO_DEBUG", "False") == "True"
+CORS_DEBUG = True
+CORS_ALLOW_CREDENTIALS = True
 
 ALLOWED_HOSTS = [
     "localhost",
