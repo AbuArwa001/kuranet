@@ -62,7 +62,8 @@ class TestUserViewSet:
         # Should see at least the current user and the another user
         assert len(response.data) >= 2
             # Extract usernames from serialized data
-        users = response.data.get("results", [])
+        # users = response.data.get("results", [])
+        users = response.data
         usernames = [user['username'] for user in users]
 
         # Check if both users are present
