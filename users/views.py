@@ -1,5 +1,5 @@
 from rest_framework import viewsets, status, permissions
-from users.permissions import IsOwnerOrAdmin, IsCreator, IsPollOwnerOrAdmin
+from users.permissions import IsOwnerOrAdmin, IsCreator, IsPollOwnerOrAdmin, AllowAny
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.contrib.auth import authenticate
@@ -10,12 +10,10 @@ from .serializers import UserSerializer
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().order_by('-date_joined')
     serializer_class = UserSerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = []
     
     def get_permissions(self):
-        if self.action in ['create']:
-            return [permissions.AllowAny()]
-        elif self.action in ['retrieve']:
+        if self.action in ['retrieve']:
             return [permissions.IsAuthenticated()]
         elif self.action in ['update', 'partial_update']:
             return [IsOwnerOrAdmin()]

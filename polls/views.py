@@ -53,20 +53,34 @@ class PollViewSet(viewsets.ModelViewSet):
 class PollOptionViewSet(viewsets.ModelViewSet):
     serializer_class = PollOptionSerializer
     permission_classes = [IsAuthenticated, IsPollOwnerOrAdmin]
-    
     def get_queryset(self):
-        # return PollOption.objects.filter(poll_id=self.kwargs['poll_id'])
-        poll_id = self.kwargs.get('id')
-        if not poll_id:
-            return PollOption.objects.none()
-        return PollOption.objects.filter(poll_id=poll_id)
+        # Get poll_id from URL parameters
+        poll_id = self.kwargs['poll_id']
+        
+        # Base queryset: options from the specified poll
+        queryset = PollOption.objects.filter(poll_id=poll_id)
+        
+        # For detail actions (retrieve/update/delete), further filter by option ID
+        if self.action in ['retrieve', 'update', 'partial_update', 'destroy']:
+            option_id = self.kwargs['pk']
+            queryset = queryset.filter(id=option_id)
+            
+        return queryset
 
     def perform_create(self, serializer):
         poll = Poll.objects.get(id=self.kwargs['poll_id'])
         serializer.save(poll=poll)
     def partial_update(self, request, *args, **kwargs):
+        print(f"Partial update called with kwargs: {kwargs}")
         return super().partial_update(request, *args, **kwargs)
+    def update(self, request, *args, **kwargs):
+        print(f"Update called with kwargs: {kwargs}")
+        return super().update(request, *args, **kwargs)
 
+    def perform_update(self, serializer):
+        print(f"Update called with kwargs: {self.kwargs}")
+        poll = Poll.objects.get(id=self.kwargs['poll_id'])
+        serializer.save(poll=poll)
 class VoteViewSet(viewsets.ModelViewSet):
     serializer_class = VoteSerializer
     permission_classes = [IsAuthenticated]
