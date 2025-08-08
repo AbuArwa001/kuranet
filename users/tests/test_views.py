@@ -57,7 +57,7 @@ def authenticated_admin_client(api_client, create_admin_user):
 class TestUserViewSet:
     def test_list_users_authenticated(self, authenticated_client, create_another_user):
         """Test listing users as an authenticated user."""
-        response = authenticated_client.get('users/')
+        response = authenticated_client.get('/api/v1/users/')
         assert response.status_code == status.HTTP_200_OK
         # Should see at least the current user and the another user
         assert len(response.data) >= 2
