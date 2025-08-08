@@ -22,7 +22,7 @@ def test_user():
 def test_user_registration(test_user):
     """Test user registration endpoint"""
     # Test successful registration
-    url = f"{BASE_URL}/users/auth/register/"
+    url = f"{BASE_URL}{API_PREFIX}users/auth/register/"
     response = requests.post(url, json=test_user)
     assert response.status_code == 201
 
@@ -31,7 +31,7 @@ def test_user_registration(test_user):
     assert dup_response.status_code == 400
 
     # Test login with new user
-    login_url = f"{BASE_URL}/users/auth/login/"
+    login_url = f"{BASE_URL}{API_PREFIX}users/auth/login/"
     login_data = {"username": test_user["username"], "password": test_user["password"]}
     login_response = requests.post(login_url, json=login_data)
     assert login_response.status_code == 200
@@ -48,10 +48,10 @@ def test_user_registration(test_user):
 def test_protected_endpoints(test_user):
     """Test endpoints requiring authentication"""
     # First register and login to get a valid token
-    register_url = f"{BASE_URL}/users/auth/register/"
+    register_url = f"{BASE_URL}{API_PREFIX}users/auth/register/"
     requests.post(register_url, json=test_user)
 
-    login_url = f"{BASE_URL}/users/auth/login/"
+    login_url = f"{BASE_URL}{API_PREFIX}users/auth/login/"
     auth_response = requests.post(
         login_url,
         json={"username": test_user["username"], "password": test_user["password"]},
@@ -62,12 +62,12 @@ def test_protected_endpoints(test_user):
     token = auth_response.json()["access"]
 
     # Test protected endpoint - replace with your actual endpoint
-    protected_url = f"{BASE_URL}/users/"  # Example endpoint
+    protected_url = f"{BASE_URL}{API_PREFIX}users/"  # Example endpoint
     headers = {"Authorization": f"Bearer {token}"}
 
     # Test with valid token
     protected_response = requests.get(protected_url, headers=headers)
-    # assert protected_response.status_code == 200
+    assert protected_response.status_code == 200
 
     # Test without token
     no_auth_response = requests.get(protected_url)
@@ -76,7 +76,7 @@ def test_protected_endpoints(test_user):
 
 def test_invalid_registration():
     """Test registration with invalid data"""
-    url = f"{BASE_URL}/users/auth/register/"
+    url = f"{BASE_URL}{API_PREFIX}users/auth/register/"
 
     # Missing required field
     response = requests.post(
@@ -100,10 +100,10 @@ def test_invalid_registration():
 def test_refresh_token(test_user):
     """Test token refresh flow"""
     # Register and login
-    register_url = f"{BASE_URL}/users/auth/register/"
+    register_url = f"{BASE_URL}{API_PREFIX}users/auth/register/"
     requests.post(register_url, json=test_user)
 
-    login_url = f"{BASE_URL}/auth/token/"
+    login_url = f"{BASE_URL}{API_PREFIX}users/auth/login/"
     auth_response = requests.post(
         login_url,
         json={"username": test_user["username"], "password": test_user["password"]},
@@ -111,7 +111,7 @@ def test_refresh_token(test_user):
     refresh_token = auth_response.json()["refresh"]
 
     # Test refresh
-    refresh_url = f"{BASE_URL}/auth/token/refresh/"
+    refresh_url = f"{BASE_URL}{API_PREFIX}users/auth/refresh/"
     refresh_response = requests.post(refresh_url, json={"refresh": refresh_token})
     assert refresh_response.status_code == 200
     assert "access" in refresh_response.json()
