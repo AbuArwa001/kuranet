@@ -64,47 +64,57 @@ This section provides a summary of the available API endpoints, grouped by funct
 ## 📊 Entity Relationship Diagram (ERD)
 
 ```mermaid
+---
+config:
+  layout: elk
+  look: handDrawn
+  theme: neo
+title: POLL SYSTEM
+---
 erDiagram
-    USER ||--o{ POLL : creates
-    USER ||--o{ VOTE : votes
-    POLL ||--|{ POLLOPTION : has
-    POLLOPTION ||--o{ VOTE : receives
-    POLL ||--o{ RESULT : summarizes
-    POLLOPTION ||--o{ RESULT : included_in
+	direction LR
+	USERS {
+		int userID PK ""  
+		string username  ""  
+		string email  ""  
+		string password_hash  ""  
+	}
+	ROLES {
+		int roleID PK ""  
+		int userID FK ""  
+		string RoleName  "Admin, Creator, User"  
+	}
+	POLLS {
+		int pollID PK ""  
+		int userID FK ""  
+		string title  ""  
+		string description  ""  
+		datetime creationDate  ""  
+		datetime closingDate  ""  
+		string status  ""  
+	}
+	POLL_OPTIONS {
+		int optionID PK ""  
+		string optionText  ""  
+	}
+	VOTES {
+		int voteID PK ""  
+		int userID FK ""  
+		int pollID FK ""  
+		int optionID FK ""  
+		datetime timestamp  ""  
+	}
 
-    USER {
-        int id PK
-        string name
-        string email
-    }
+	USERS||--o{POLLS:"creates"
+	USERS||--||ROLES:"creates"
+	POLLS||--o{POLL_OPTIONS:"has"
+	POLL_OPTIONS||--o{VOTES:"is_for"
+	USERS||--o{VOTES:"casts"
 
-    POLL {
-        int id PK
-        string title
-        string description
-        datetime created_at
-        int author_id FK
-    }
+	style VOTES stroke:#000000
 
-    POLLOPTION {
-        int id PK
-        int poll_id FK
-        string text
-    }
+	VOTES:::Ash
 
-    VOTE {
-        int id PK
-        int user_id FK
-        int option_id FK
-        datetime voted_at
-    }
-
-    RESULT {
-        int id PK
-        int poll_id FK
-        int option_id FK
-        int vote_count
-    }
 ```
 The ERD above visually represents the relationships between the core entities of the KuraNet application. It shows how a `USER` can create `POLL`s and cast `VOTE`s. Each `POLL` has multiple `POLLOPTION`s, and each `VOTE` is linked to a specific option. The `RESULT` entity aggregates the votes for each poll and its options.
 
