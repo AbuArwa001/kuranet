@@ -44,7 +44,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
 
     objects = UserManager()
-    roles = models.ManyToManyField(Role, blank=True, related_name="users")
+    roles = models.ManyToManyField(Role, blank=True, related_name="users", default="user")
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS = ["email"]
 

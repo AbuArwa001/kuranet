@@ -114,7 +114,10 @@ erDiagram
 	style VOTES stroke:#000000
 
 	VOTES:::Ash
+<<<<<<< HEAD
 
+=======
+>>>>>>> release/0.1.93
 ```
 The ERD above visually represents the relationships between the core entities of the KuraNet application. It shows how a `USER` can create `POLL`s and cast `VOTE`s. Each `POLL` has multiple `POLLOPTION`s, and each `VOTE` is linked to a specific option. The `RESULT` entity aggregates the votes for each poll and its options.
 
